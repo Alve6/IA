@@ -2,8 +2,6 @@
 #include <string>
 #include <vector>
 
-//cd /mnt/c/Users/Pedro/Desktop/IA; g++ game.cpp -o game -I$HOME/.local/include -L$HOME/.local/lib -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
-
 struct Cell {
     int x;
     int y;
