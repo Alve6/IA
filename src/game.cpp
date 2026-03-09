@@ -32,13 +32,21 @@ bool IsBlockedByWall(const Cell &from, int dx, int dy, const std::vector<Wall> &
     return false;
 }
 
-Cell SlideMove(Cell start, int dx, int dy, int cols, int rows, const std::vector<Wall> &walls, Cell otherPlayer) {
+
+bool SameCellPlayer(const Cell player, const std::vector<Cell> &otherPlayer) {
+    for (int i = 0; i < (int)otherPlayer.size(); i++) {
+        if (player.x==otherPlayer[i].x && player.y == otherPlayer[i].y) return true;
+    }
+    return false;
+}
+
+Cell SlideMove(Cell start, int dx, int dy, int cols, int rows, const std::vector<Wall> &walls, const std::vector<Cell> otherPlayer) {
     Cell current = start;
     while (true) {
         Cell next = {current.x + dx, current.y + dy};
         bool outside = next.x < 0 || next.x >= cols || next.y < 0 || next.y >= rows;
         bool blockedByObstacle = IsBlockedByWall(current, dx, dy, walls);
-        bool blockedByPlayer = SameCell(next, otherPlayer);
+        bool blockedByPlayer = SameCellPlayer(next, otherPlayer);
         if (outside || blockedByObstacle || blockedByPlayer) {
             break;
         }
@@ -46,5 +54,3 @@ Cell SlideMove(Cell start, int dx, int dy, int cols, int rows, const std::vector
     }
     return current;
 }
-
-
