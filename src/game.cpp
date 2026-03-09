@@ -1,6 +1,7 @@
 #include "game.h"
 
 
+
 bool SameCell(const Cell &a, const Cell &b) {
     return a.x == b.x && a.y == b.y;
 }
@@ -45,3 +46,5 @@ Cell SlideMove(Cell start, int dx, int dy, int cols, int rows, const std::vector
     }
     return current;
 }
+
+
