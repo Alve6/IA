@@ -1,6 +1,10 @@
 #include "raylib.h"
+#include <algorithm>
+#include <queue>
 #include <string>
 #include <vector>
+
+using namespace std;
 
 struct Cell {
     int x;
@@ -58,6 +62,64 @@ static Cell SlideMove(Cell start, int dx, int dy, int cols, int rows, const std:
     return current;
 }
 
+static std::vector<Cell> breadth_first_search(Cell initial_state, Cell goal_state, int cols, int rows, const std::vector<Wall> &walls, Cell otherPlayer) {
+    std::vector<std::vector<bool>> visited(rows, std::vector<bool>(cols, false));
+    std::vector<std::vector<Cell>> parent(rows, std::vector<Cell>(cols, {-1, -1}));
+    std::queue<Cell> q;
+
+    visited[initial_state.y][initial_state.x] = true;
+    q.push(initial_state);
+
+    const int dirs[4][2] = {
+        {0, -1},
+        {-1, 0},
+        {0, 1},
+        {1, 0}
+    };
+
+    bool found = false;
+    while (!q.empty()) {
+        Cell current = q.front();
+        q.pop();
+
+        if (SameCell(current, goal_state)) {
+            found = true;
+            break;
+        }
+
+        for (const auto &dir : dirs) {
+            Cell next = SlideMove(current, dir[0], dir[1], cols, rows, walls, otherPlayer);
+            if (SameCell(next, current)) {
+                continue;
+            }
+            if (!visited[next.y][next.x]) {
+                visited[next.y][next.x] = true;
+                parent[next.y][next.x] = current;
+                q.push(next);
+            }
+        }
+    }
+
+    if (!found) {
+        return {};
+    }
+
+    std::vector<Cell> path;
+    Cell cur = goal_state;
+    path.push_back(cur);
+    while (!SameCell(cur, initial_state)) {
+        Cell prev = parent[cur.y][cur.x];
+        if (prev.x == -1 && prev.y == -1) {
+            return {};
+        }
+        cur = prev;
+        path.push_back(cur);
+    }
+
+    std::reverse(path.begin(), path.end());
+    return path;
+}
+
 int main() {
     const int screenWidth = 900;
     const int screenHeight = 720;
@@ -110,18 +172,19 @@ int main() {
     ScreenState state = MENU;
 
     Rectangle playButton = {(float)(screenWidth / 2 - 100), 340.0f, 200.0f, 60.0f};
+    Rectangle hintButton = {(float)(gridX + cols * cellSize + 20), (float)(gridY + 20), 120.0f, 42.0f};
 
     Cell p1 = {0, 0};
-    Cell p2 = {cols - 1, rows - 1};
-    Cell coin = {cols / 2, rows / 2};
-    bool redTurn = true;
-    int score1 = 0;
-    int score2 = 0;
+    Cell noPlayer = {-1, -1};
+    Cell coin = {cols - 1, 0};
+    int score = 0;
+    Cell hintNext = {-1, -1};
+    bool hasHint = false;
 
     auto respawnCoin = [&]() {
         do {
             coin = {GetRandomValue(0, cols - 1), GetRandomValue(0, rows - 1)};
-        } while (SameCell(coin, p1) || SameCell(coin, p2));
+        } while (SameCell(coin, p1));
     };
 
     while (!WindowShouldClose()) {
@@ -133,35 +196,60 @@ int main() {
                 }
             }
         } else {
-            if (IsKeyPressed(KEY_W)) p1 = SlideMove(p1, 0, -1, cols, rows, walls, p2);
-            if (IsKeyPressed(KEY_S)) p1 = SlideMove(p1, 0, 1, cols, rows, walls, p2);
-            if (IsKeyPressed(KEY_A)) p1 = SlideMove(p1, -1, 0, cols, rows, walls, p2);
-            if (IsKeyPressed(KEY_D)) p1 = SlideMove(p1, 1, 0, cols, rows, walls, p2);
+            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+                Vector2 mouse = GetMousePosition();
+                if (CheckCollisionPointRec(mouse, hintButton)) {
+                    std::vector<Cell> path = breadth_first_search(p1, coin, cols, rows, walls, noPlayer);
 
-            if (IsKeyPressed(KEY_UP)) p2 = SlideMove(p2, 0, -1, cols, rows, walls, p1);
-            if (IsKeyPressed(KEY_DOWN)) p2 = SlideMove(p2, 0, 1, cols, rows, walls, p1);
-            if (IsKeyPressed(KEY_LEFT)) p2 = SlideMove(p2, -1, 0, cols, rows, walls, p1);
-            if (IsKeyPressed(KEY_RIGHT)) p2 = SlideMove(p2, 1, 0, cols, rows, walls, p1);
-
-            if (redTurn && SameCell(p1, coin)) {
-                score1++;
-                redTurn = false;
-                respawnCoin();
+                    if (path.size() >= 2) {
+                        hintNext = path[1];
+                        hasHint = true;
+                    } else {
+                        hasHint = false;
+                    }
+                }
             }
 
-            if (!redTurn && SameCell(p2, coin)) {
-                score2++;
-                redTurn = true;
+            if (IsKeyPressed(KEY_W)) {
+                int originalx = p1.x;
+                int originaly = p1.y;
+                p1 = SlideMove(p1, 0, -1, cols, rows, walls, noPlayer);
+                if (originalx != p1.x) score++;
+                if (originaly != p1.y) score++;
+            }
+
+            if (IsKeyPressed(KEY_S)) {
+                int originalx = p1.x;
+                int originaly = p1.y;
+                p1 = SlideMove(p1, 0, 1, cols, rows, walls, noPlayer);
+                if (originalx != p1.x) score++;
+                if (originaly != p1.y) score++;
+            }
+            if (IsKeyPressed(KEY_A)) {
+                int originalx = p1.x;
+                int originaly = p1.y;
+                p1 = SlideMove(p1, -1, 0, cols, rows, walls, noPlayer);
+                if (originalx != p1.x) score++;
+                if (originaly != p1.y) score++;
+            }
+            if (IsKeyPressed(KEY_D)) {
+                int originalx = p1.x;
+                int originaly = p1.y;
+                p1 = SlideMove(p1, 1, 0, cols, rows, walls, noPlayer);
+                if (originalx != p1.x) score++;
+                if (originaly != p1.y) score++;
+            }
+
+            if (SameCell(p1, coin)) {
+                score = 0;
                 respawnCoin();
             }
 
             if (IsKeyPressed(KEY_R)) {
                 p1 = {0, 0};
-                p2 = {cols - 1, rows - 1};
-                coin = {cols / 2, rows / 2};
-                redTurn = true;
-                score1 = 0;
-                score2 = 0;
+                coin = {cols-1, 0};
+                score = 0;
+                hasHint = false;
             }
         }
 
@@ -172,10 +260,10 @@ int main() {
             DrawText("Ricochet", screenWidth / 2 - 110, 180, 56, BLACK);
             DrawRectangleRec(playButton, RED);
             DrawText("Play", screenWidth / 2 - 30, 357, 28, WHITE);
-            DrawText("P1: WASD | P2: Arrows", screenWidth / 2 - 145, 450, 22, BLACK);
+            DrawText("Move: WASD", screenWidth / 2 - 70, 450, 22, BLACK);
         } else {
             DrawText("Ricochet", gridX, 20, 36, BLACK);
-            std::string scoreText = "P1: " + std::to_string(score1) + "   P2: " + std::to_string(score2);
+            std::string scoreText = "Score: "+std::to_string(score);
             DrawText(scoreText.c_str(), gridX + 260, 28, 28, BLACK);
             DrawText("R to reset", gridX + 500, 34, 20, DARKGRAY);
 
@@ -199,16 +287,19 @@ int main() {
 
             int coinX = gridX + coin.x * cellSize + cellSize / 2;
             int coinY = gridY + coin.y * cellSize + cellSize / 2;
-            DrawCircle(coinX, coinY, 12, redTurn ? RED : BLUE);
+            DrawCircle(coinX, coinY, 12, ORANGE);
 
             int p1x = gridX + p1.x * cellSize + cellSize / 2;
             int p1y = gridY + p1.y * cellSize + cellSize / 2;
             DrawCircle(p1x, p1y, 16, RED);
 
-            int p2x = gridX + p2.x * cellSize + cellSize / 2;
-            int p2y = gridY + p2.y * cellSize + cellSize / 2;
-            DrawCircle(p2x, p2y, 16, BLUE);
+            DrawRectangleRec(hintButton, LIGHTGRAY);
+            DrawRectangleLinesEx(hintButton, 2, DARKGRAY);
+            DrawText("Hint", (int)hintButton.x + 36, (int)hintButton.y + 10, 20, BLACK);
 
+            if (hasHint) {
+                DrawText(TextFormat("Next: (%d,%d)", hintNext.x, hintNext.y), (int)hintButton.x - 8, (int)hintButton.y + 55, 20, DARKGRAY);
+            }
 
         }
 
@@ -218,3 +309,4 @@ int main() {
     CloseWindow();
     return 0;
 }
+
