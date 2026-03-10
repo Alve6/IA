@@ -376,16 +376,16 @@ int main() {
             // if (selectedPlayer == 3) DrawCircleLines(p4x, p4y, 20, GOLD);
             switch (selectedRobot) {
                 case ROBOT_BLUE:
-                DrawCircleLines(gameState.bluePos.x, gameState.bluePos.y, 20, GOLD);
+                DrawCircleLines(bluex, bluey, 20, BLUE);
                 break;
                 case ROBOT_RED:
-                DrawCircleLines(gameState.redPos.x, gameState.redPos.y, 20, GOLD);
+                DrawCircleLines(redx, redy, 20, RED);
                 break;
                 case ROBOT_GREEN:
-                DrawCircleLines(gameState.greenPos.x, gameState.orangePos.y, 20, GOLD);
+                DrawCircleLines(greenx, greeny, 20, GREEN);
                 break;
                 case ROBOT_ORANGE:
-                DrawCircleLines(gameState.orangePos.x, gameState.orangePos.y, 20, GOLD);
+                DrawCircleLines(orangex, orangey, 20, ORANGE);
                 break;
             }
 
