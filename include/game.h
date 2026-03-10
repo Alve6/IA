@@ -4,21 +4,33 @@
 #include <stdlib.h>
 #include <iostream>
 
-struct Cell {
-    int x;
-    int y;
+enum Direction {
+    DIR_NORTH,
+    DIR_EAST,
+    DIR_SOUTH,
+    DIR_WEST,
+    DIR_INVALID
+};
+
+enum RobotType {
+    ROBOT_BLUE,
+    ROBOT_RED,
+    ROBOT_GREEN,
+    ROBOT_ORANGE
+};
+
+enum TileFlag {
+    TILE_WALL_NORTH = (1 << 0),
+    TILE_WALL_EAST  = (1 << 1),
+    TILE_WALL_SOUTH = (1 << 2),
+    TILE_WALL_WEST  = (1 << 3),
+    TILE_GOAL       = (1 << 4)
 };
 
 struct iVector2 {
     int x;
     int y;
     bool operator==(const iVector2 &other) const;
-};
-
-struct Wall {
-    int x;
-    int y;
-    bool horizontal;
 };
 
 struct GameState {
@@ -28,15 +40,6 @@ struct GameState {
     iVector2 orangePos;
     bool operator==(const GameState &other) const;
     bool operator!=(const GameState &other) const;
-};
-
-
-enum TileFlag {
-    TILE_WALL_NORTH = (1 << 0),
-    TILE_WALL_EAST  = (1 << 1),
-    TILE_WALL_SOUTH = (1 << 2),
-    TILE_WALL_WEST  = (1 << 3),
-    TILE_GOAL       = (1 << 4)
 };
 
 struct GameBoard {
@@ -62,31 +65,6 @@ struct GameBoard {
     bool checkFlag(iVector2 pos, TileFlag flag) const;
 };
 
-enum Direction {
-    DIR_NORTH,
-    DIR_EAST,
-    DIR_SOUTH,
-    DIR_WEST,
-    DIR_INVALID
-};
-enum RobotType {
-    ROBOT_BLUE,
-    ROBOT_RED,
-    ROBOT_GREEN,
-    ROBOT_ORANGE
-};
-
 // Attempts to move a specific robot in a specific direction
 // Returns the new GameState (may be the same as initial, if movement is not possible)
 GameState slideMove(RobotType robotType, Direction dir, const GameState &state, const GameBoard &board);
-
-
-// bool SameCell(const Cell &a, const Cell &b);
-
-// bool SameCellPlayer(const Cell player, const std::vector<Cell> &otherPlayer);
-
-// bool HasWall(const std::vector<Wall> &walls, int x, int y, bool horizontal);
-
-// bool IsBlockedByWall(const Cell &from, int dx, int dy, const std::vector<Wall> &walls);
-
-// Cell SlideMove(Cell start, int dx, int dy, int cols, int rows, const std::vector<Wall> &walls, const std::vector<Cell> otherPlayer);
