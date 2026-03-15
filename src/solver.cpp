@@ -2,8 +2,8 @@
 
 
 #include <queue>
+#include <stack>
 #include <algorithm>
-
 
 struct Node {
     Node *parent;
@@ -74,6 +74,47 @@ std::vector<Action> solveBFS(const GameState &initState, const GameBoard &board)
             Node *newChild = new Node(state, action);
             node->addChild(newChild);
             q.push(newChild);
+            nodeCount++;
+            if (isWinningState(state, board)) {
+                final = newChild;
+                break;
+            }
+        }
+        // std::cout << "Node count: " << nodeCount << std::endl;
+    }
+    std::vector<Action> result;
+    if (final != nullptr) {
+        Node *current = final;
+        
+        // result.push_back(current->lastAction);
+        while (current->parent != nullptr) {
+            result.push_back(current->lastAction);
+            current = current->parent;
+        }
+        std::reverse(result.begin(), result.end());
+    }
+    return result;
+}
+
+
+std::vector<Action> solveDFS(const GameState &initState, const GameBoard &board) {
+    Node root(initState, {ROBOT_BLUE, DIR_INVALID});
+    std::stack<Node*> stack;
+    stack.push(&root);
+    Node *final = nullptr;
+    int nodeCount = 1;
+    while (!stack.empty() && final == nullptr) {
+        Node *node = stack.top();
+        std::vector<std::pair<GameState, Action>> nextStates = getNextStates(node->state, board);
+        stack.pop();
+        for (std::pair<GameState, Action> pair : nextStates) {
+            GameState state = pair.first;
+            Action action = pair.second;
+            if (root.hasState(state))
+                continue;
+            Node *newChild = new Node(state, action);
+            node->addChild(newChild);
+            stack.push(newChild);
             nodeCount++;
             if (isWinningState(state, board)) {
                 final = newChild;
