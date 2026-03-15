@@ -2,6 +2,33 @@
 
 #include <cstring>
 
+std::string directionToString(Direction dir) {
+    switch(dir) {
+        case DIR_NORTH:
+        return "DIR_NORTH";
+        case DIR_EAST:
+        return "DIR_EAST";
+        case DIR_SOUTH:
+        return "DIR_SOUTH";
+        case DIR_WEST:
+        return "DIR_WEST";
+        case DIR_INVALID:
+        return "DIR_INVALID";
+    }
+}
+
+std::string robotTypeToString(RobotType robot) {
+    switch(robot) {
+        case ROBOT_BLUE:
+        return "ROBOT_BLUE";
+        case ROBOT_RED:
+        return "ROBOT_RED";
+        case ROBOT_GREEN:
+        return "ROBOT_GREEN";
+        case ROBOT_ORANGE:
+        return "ROBOT_ORANGE";
+    }
+}
 bool iVector2::operator==(const iVector2 &other) const {
     return x == other.x && y == other.y;
 }
@@ -52,6 +79,16 @@ bool GameBoard::checkFlag(iVector2 pos, TileFlag flag) const {
     return board[pos.y * this->width + pos.x] & flag;
 }
 
+bool isWinningState(const GameState &state, const GameBoard &board) {
+    
+    // std::cout << state.bluePos.x << ' ' << state.bluePos.y << ',' <<state.redPos.x << ' ' << state.redPos.y << ',' <<
+    // state.greenPos.x << ' ' << state.greenPos.y << ',' <<state.orangePos.x << ' ' << state.orangePos.y << '\n';
+    return board.checkFlag(state.bluePos, TILE_GOAL) ||
+            board.checkFlag(state.redPos, TILE_GOAL) ||
+            board.checkFlag(state.greenPos, TILE_GOAL) ||
+            board.checkFlag(state.orangePos, TILE_GOAL);
+}
+
 GameState slideMove(RobotType robotType, Direction dir, const GameState &state, const GameBoard &board) {  
     iVector2 pos;
     switch (robotType) {
@@ -70,7 +107,7 @@ GameState slideMove(RobotType robotType, Direction dir, const GameState &state, 
     }
 
     bool blocked;
-    iVector2 newPos;
+    iVector2 newPos = {-1, -1};
     bool done = false;
     while (!done) {
         switch (dir) {
@@ -136,7 +173,8 @@ GameState slideMove(RobotType robotType, Direction dir, const GameState &state, 
             newPos == state.greenPos || 
             newPos == state.orangePos)
             break;
-        if (!blocked)
+            
+        if (!done)
             pos = newPos;
     }
     GameState newState = state;

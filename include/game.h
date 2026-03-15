@@ -12,12 +12,15 @@ enum Direction {
     DIR_INVALID
 };
 
+std::string directionToString(Direction dir);
+
 enum RobotType {
     ROBOT_BLUE,
     ROBOT_RED,
     ROBOT_GREEN,
     ROBOT_ORANGE
 };
+std::string robotTypeToString(RobotType robot);
 
 enum TileFlag {
     TILE_WALL_NORTH = (1 << 0),
@@ -64,6 +67,8 @@ struct GameBoard {
     // Check if a specific flag is present on a tile
     bool checkFlag(iVector2 pos, TileFlag flag) const;
 };
+
+bool isWinningState(const GameState &state, const GameBoard &board);
 
 // Attempts to move a specific robot in a specific direction
 // Returns the new GameState (may be the same as initial, if movement is not possible)

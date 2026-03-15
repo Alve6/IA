@@ -1,5 +1,8 @@
 #include "game.h"
+#include "solver.h"
+
 #include "raylib.h"
+
 #include <string>
 #include <vector>
 #include <algorithm>
@@ -55,7 +58,12 @@ int main() {
     gameBoard.addTileFlag({6,6}, TILE_WALL_SOUTH);
 
     RobotType selectedRobot = ROBOT_BLUE;
-
+    std::vector<Action> solution = solveBFS(gameState, gameBoard);
+    std::cout << "Solution size: " << solution.size() << std::endl;
+    for (Action action : solution) {
+        std::cout << "Move robot " << robotTypeToString(action.robot) 
+        << " to " << directionToString(action.dir) << std::endl;
+    }
     while (!WindowShouldClose()) {
         if (state == MENU) {
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
