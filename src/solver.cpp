@@ -70,15 +70,12 @@ std::vector<Action> solveBFS(const GameState &initState, const GameBoard &board)
         std::vector<std::pair<GameState, Action>> nextStates = getNextStates(node->state, board);
         q.pop();
         for (std::pair<GameState, Action> pair : nextStates) {
-            std::cout << "Iter\n";
             GameState state = pair.first;
             Action action = pair.second;
             // if (root.hasState(state))
             //     continue;
-            if (visitedStates.find(state) != visitedStates.end()) {
-                std::cout << "found\n";
+            if (visitedStates.find(state) != visitedStates.end())
                 continue;
-            }
             visitedStates.insert(state);
             Node *newChild = new Node(state, action);
             node->addChild(newChild);
@@ -89,8 +86,8 @@ std::vector<Action> solveBFS(const GameState &initState, const GameBoard &board)
                 break;
             }
         }
-        std::cout << "Node count: " << nodeCount << std::endl;
     }
+    std::cout << "Solution tree node count: " << nodeCount << std::endl;
     std::vector<Action> result;
     if (final != nullptr) {
         Node *current = final;
