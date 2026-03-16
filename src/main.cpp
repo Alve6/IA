@@ -58,7 +58,7 @@ int main() {
     gameBoard.addTileFlag({6,6}, TILE_WALL_SOUTH);
 
     RobotType selectedRobot = ROBOT_BLUE;
-    std::vector<Action> solution = solveBFS(gameState, gameBoard);
+    std::vector<Action> solution = solveIDS(gameState, gameBoard);
     std::cout << "Solution size: " << solution.size() << std::endl;
     for (Action action : solution) {
         std::cout << "Move robot " << robotTypeToString(action.robot) 

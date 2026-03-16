@@ -12,6 +12,8 @@ struct Node {
     // Action that lead to the current state. Doesn't make sense in the root node, i guess
     Action lastAction;
     std::vector<Node *> children;
+    // For IDS
+    int depth;
 
     Node(const GameState &state, const Action &lastAction) {
         parent = nullptr;
@@ -22,10 +24,14 @@ struct Node {
         this->children.push_back(child);
         child->parent = this;
     }
-    ~Node() {
+    void deleteChildren() {
         for (Node *child : children) {
             delete child;
         }
+        children.clear();
+    }
+    ~Node() {
+        deleteChildren();
     }
     
     // Returns true if either this node or any of it's descendants has the specified state
@@ -128,6 +134,57 @@ std::vector<Action> solveDFS(const GameState &initState, const GameBoard &board)
             }
         }
         // std::cout << "Node count: " << nodeCount << std::endl;
+    }
+    std::vector<Action> result;
+    if (final != nullptr) {
+        Node *current = final;
+        
+        // result.push_back(current->lastAction);
+        while (current->parent != nullptr) {
+            result.push_back(current->lastAction);
+            current = current->parent;
+        }
+        std::reverse(result.begin(), result.end());
+    }
+    return result;
+}
+
+// At depth limit of 10 and no viable solution, it takes about 5 second on my machine
+const int IDS_MAX_DEPTH = 10;
+std::vector<Action> solveIDS(const GameState &initState, const GameBoard &board) {
+    Node *final = nullptr;
+    Node root(initState, {ROBOT_BLUE, DIR_INVALID});
+    root.depth = 0;
+    for (int maxDepth = 1; maxDepth < IDS_MAX_DEPTH; maxDepth++) {
+        
+        std::stack<Node*> stack;
+        stack.push(&root);
+        while (!stack.empty() && final == nullptr) {
+            Node *node = stack.top();
+            stack.pop();
+            int depth = node->depth;
+            if (depth > maxDepth)
+                continue;
+            std::vector<std::pair<GameState, Action>> nextStates = getNextStates(node->state, board);
+            for (std::pair<GameState, Action> pair : nextStates) {
+                GameState state = pair.first;
+                Action action = pair.second;
+                if (root.hasState(state))
+                    continue;
+                Node *newChild = new Node(state, action);
+                newChild->depth = depth + 1;
+                node->addChild(newChild);
+                stack.push(newChild);
+                if (isWinningState(state, board)) {
+                    final = newChild;
+                    break;
+                }
+            }
+            // std::cout << "Node count: " << nodeCount << std::endl;
+        }
+        if (final != nullptr)
+            break;
+        root.deleteChildren();
     }
     std::vector<Action> result;
     if (final != nullptr) {
