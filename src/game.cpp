@@ -44,6 +44,21 @@ bool GameState::operator!=(const GameState &other) const {
     return !(*this == other);
 }
 
+bool GameState::operator<(const GameState &other) const {
+    if (bluePos.x != other.bluePos.x) return bluePos.x < other.bluePos.x;
+    if (bluePos.y != other.bluePos.y) return bluePos.y < other.bluePos.y;
+
+    if (redPos.x != other.redPos.x) return redPos.x < other.redPos.x;
+    if (redPos.y != other.redPos.y) return redPos.y < other.redPos.y;
+
+    if (greenPos.x != other.greenPos.x) return greenPos.x < other.greenPos.x;
+    if (greenPos.y != other.greenPos.y) return greenPos.y < other.greenPos.y;
+
+    if (orangePos.x != other.orangePos.x) return orangePos.x < other.orangePos.x;
+    if (orangePos.y != other.orangePos.y) return orangePos.y < other.orangePos.y;
+
+    return false;
+}
 GameBoard::GameBoard(int width, int height) {
     board = (char*)malloc(sizeof(char) * (width * height));
     if (!board) {

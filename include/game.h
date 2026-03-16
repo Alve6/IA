@@ -43,6 +43,8 @@ struct GameState {
     iVector2 orangePos;
     bool operator==(const GameState &other) const;
     bool operator!=(const GameState &other) const;
+    // To make it possible to be stored in a set
+    bool operator<(const GameState &other) const;
 };
 
 struct GameBoard {
