@@ -61,18 +61,19 @@ int main() {
     bool gameWon = isWinningState(gameState, gameBoard);
 
     RobotType selectedRobot = ROBOT_BLUE;
-    std::vector<Action> solution = solveIDS(gameState, gameBoard);
-    std::cout << "Solution size: " << solution.size() << std::endl;
-    for (Action action : solution) {
-        std::cout << "Move robot " << robotTypeToString(action.robot) 
-        << " to " << directionToString(action.dir) << std::endl;
-    }
+
+    bool hasHint = false;
+    Action currentHint;
+    std::string hintText = "";
+
     while (!WindowShouldClose()) {
         if (IsKeyPressed(KEY_R)) {
             gameState = initialGameState;
             selectedRobot = ROBOT_BLUE;
             stepsTaken = 0;
             gameWon = false;
+            hasHint = false;
+            hintText = "";
         }
         if (state == MENU) {
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
@@ -82,10 +83,24 @@ int main() {
                 }
             }
         } else {
-            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            if (!gameWon && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                 Vector2 mousePos = GetMousePosition();
                 if (CheckCollisionPointRec(mousePos, hintButton)) {
-                    
+                    std::vector<Action> hintSolution = solveBFS(gameState, gameBoard);
+
+                    if (!hintSolution.empty()) {
+                        currentHint = hintSolution[0];
+                        hasHint = true;
+                        selectedRobot = currentHint.robot;
+
+                        hintText = "Hint: ";
+                        hintText += robotTypeToString(currentHint.robot);
+                        hintText += " ";
+                        hintText += directionToString(currentHint.dir);
+                    } else {
+                        hasHint = false;
+                        hintText = "No solution found";
+                    }
                 } else {
                     // Calculate on-screen positions of robots
                     int bluex = gridX + gameState.bluePos.x * cellSize + cellSize / 2;
@@ -145,6 +160,8 @@ int main() {
                                     gameState = newState;
                                     stepsTaken++;
                                     gameWon = isWinningState(gameState, gameBoard);
+                                    hasHint = false;
+                                    hintText = "";
                                 }
                             }
                         }
@@ -235,6 +252,9 @@ int main() {
             DrawRectangleRec(hintButton, LIGHTGRAY);
             DrawRectangleLinesEx(hintButton, 2, DARKGRAY);
             DrawText("Hint", (int)hintButton.x + 36, (int)hintButton.y + 10, 20, BLACK);
+            if (!hintText.empty()) {
+                DrawText(hintText.c_str(), (int)hintButton.x - 20, (int)hintButton.y + 60, 20, DARKGRAY);
+            }
         }
 
         EndDrawing();
