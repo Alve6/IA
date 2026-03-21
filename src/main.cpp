@@ -57,6 +57,9 @@ int main() {
     gameBoard.addTileFlag({3,6}, TILE_WALL_SOUTH);
     gameBoard.addTileFlag({6,6}, TILE_WALL_SOUTH);
 
+    GameState initialGameState = gameState;
+    bool gameWon = isWinningState(gameState, gameBoard);
+
     RobotType selectedRobot = ROBOT_BLUE;
     std::vector<Action> solution = solveIDS(gameState, gameBoard);
     std::cout << "Solution size: " << solution.size() << std::endl;
@@ -65,6 +68,12 @@ int main() {
         << " to " << directionToString(action.dir) << std::endl;
     }
     while (!WindowShouldClose()) {
+        if (IsKeyPressed(KEY_R)) {
+            gameState = initialGameState;
+            selectedRobot = ROBOT_BLUE;
+            stepsTaken = 0;
+            gameWon = false;
+        }
         if (state == MENU) {
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                 Vector2 mouse = GetMousePosition();
@@ -135,6 +144,7 @@ int main() {
                                 if (newState != gameState) {
                                     gameState = newState;
                                     stepsTaken++;
+                                    gameWon = isWinningState(gameState, gameBoard);
                                 }
                             }
                         }
@@ -156,6 +166,11 @@ int main() {
             std::string scoreText = "Steps: "+std::to_string(stepsTaken);
             DrawText(scoreText.c_str(), gridX + 260, 28, 28, BLACK);
             DrawText("R to reset", gridX + 500, 34, 20, DARKGRAY);
+
+            if (gameWon) {
+                DrawText("YOU WIN!", gridX + 180, gridY + rows * cellSize + 30, 32, GREEN);
+                DrawText("Press R to play again", gridX + 120, gridY + rows * cellSize + 70, 24, DARKGRAY);
+            }
 
             for (int y = 0; y < rows; y++) {
                 for (int x = 0; x < cols; x++) {
