@@ -86,7 +86,33 @@ int main() {
             if (!gameWon && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                 Vector2 mousePos = GetMousePosition();
                 if (CheckCollisionPointRec(mousePos, hintButton)) {
-                    std::vector<Action> hintSolution = solveBFS(gameState, gameBoard);
+                    int s;
+                    std::cout<<"Choose Search Algorithm: \n";
+                    std::cout<<"1. BFS \n";
+                    std::cout<<"2. DFS \n";
+                    std::cout<<"3. IDS \n";
+                    std::cout<<"4. Greedy v1 \n";
+                    std::cout<<"5. Greedy v2 \n";
+                    std::cin >> s;
+                    std::vector<Action> hintSolution;
+
+                    switch(s){
+                        case 1:
+                            hintSolution = solveBFS(gameState, gameBoard);
+                            break;
+                        case 2:
+                            hintSolution = solveDFS(gameState, gameBoard);
+                            break;
+                        case 3:
+                            hintSolution = solveIDS(gameState, gameBoard);
+                            break;
+                        case 4:
+                            hintSolution = solveGreedy1(gameState, gameBoard);
+                            break;                        
+                        case 5:
+                            hintSolution = solveGreedy2(gameState, gameBoard);
+                            break;
+                    }
 
                     if (!hintSolution.empty()) {
                         currentHint = hintSolution[0];
