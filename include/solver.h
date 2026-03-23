@@ -15,3 +15,7 @@ std::vector<Action> solveBFS(const GameState &initState, const GameBoard &board)
 std::vector<Action> solveDFS(const GameState &initState, const GameBoard &board);
 //
 std::vector<Action> solveIDS(const GameState &initState, const GameBoard &board);
+
+std::vector<Action> solveGreedy1(const GameState &initState, const GameBoard &board);
+
+std::vector<Action> solveGreedy2(const GameState &initState, const GameBoard &board);
