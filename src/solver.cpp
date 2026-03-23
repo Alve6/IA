@@ -55,22 +55,27 @@ static int manhattan(const iVector2 &a, const iVector2 &b) {
     return std::abs(a.x - b.x) + std::abs(a.y - b.y);
 }
 
-static int stateDistanceToGoal(const GameState &state, const iVector2 &goal) {
-    return std::min({
+static int stateDistanceToGoal(const GameState &state, const iVector2 &goal, int choice) {
+    if (choice == 1){
+        return std::min({
         manhattan(state.bluePos, goal),
         manhattan(state.redPos, goal),
         manhattan(state.greenPos, goal),
         manhattan(state.orangePos, goal)
-    });
+        });
+    } else if (choice == 2){
+        return manhattan(state.bluePos, goal)+ manhattan(state.redPos, goal)+ manhattan(state.greenPos, goal)+ manhattan(state.orangePos, goal);
+    }   
 }
 
 struct GreedyCompare {
     iVector2 goal;
+    int choice;
 
-    explicit GreedyCompare(const iVector2 &goal) : goal(goal) {}
+    explicit GreedyCompare(const iVector2 &goal, int choice) : goal(goal), choice(choice) {}
 
     bool operator()(const Node *a, const Node *b) const {
-        return stateDistanceToGoal(a->state, goal) > stateDistanceToGoal(b->state, goal);
+        return stateDistanceToGoal(a->state, goal,choice) > stateDistanceToGoal(b->state, goal,choice);
     }
 };
 
@@ -172,10 +177,53 @@ std::vector<Action> solveDFS(const GameState &initState, const GameBoard &board)
     return result;
 }
 
-std::vector<Action> solveGreedy(const GameState &initState, const GameBoard &board) {
+std::vector<Action> solveGreedy1(const GameState &initState, const GameBoard &board) {
+    int choice =1;
     Node root(initState, {ROBOT_BLUE, DIR_INVALID});
     iVector2 goal = findGoalPos(board);
-    std::priority_queue<Node*, std::vector<Node*>, GreedyCompare> p((GreedyCompare(goal)));
+    std::priority_queue<Node*, std::vector<Node*>, GreedyCompare> p((GreedyCompare(goal,choice)));
+    p.push(&root);
+    Node *final = nullptr;
+    int nodeCount = 1;
+    while (!p.empty() && final == nullptr) {
+        Node *node = p.top();
+        std::vector<std::pair<GameState, Action>> nextStates = getNextStates(node->state, board);
+        p.pop();
+        for (std::pair<GameState, Action> pair : nextStates) {
+            GameState state = pair.first;
+            Action action = pair.second;
+            if (root.hasState(state))
+                continue;
+            Node *newChild = new Node(state, action);
+            node->addChild(newChild);
+            p.push(newChild);
+            nodeCount++;
+            if (isWinningState(state, board)) {
+                final = newChild;
+                break;
+            }
+        }
+        // std::cout << "Node count: " << nodeCount << std::endl;
+    }
+    std::vector<Action> result;
+    if (final != nullptr) {
+        Node *current = final;
+        
+        // result.push_back(current->lastAction);
+        while (current->parent != nullptr) {
+            result.push_back(current->lastAction);
+            current = current->parent;
+        }
+        std::reverse(result.begin(), result.end());
+    }
+    return result;
+}
+
+std::vector<Action> solveGreedy2(const GameState &initState, const GameBoard &board) {
+    int choice =2;
+    Node root(initState, {ROBOT_BLUE, DIR_INVALID});
+    iVector2 goal = findGoalPos(board);
+    std::priority_queue<Node*, std::vector<Node*>, GreedyCompare> p((GreedyCompare(goal,choice)));
     p.push(&root);
     Node *final = nullptr;
     int nodeCount = 1;
