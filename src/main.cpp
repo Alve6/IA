@@ -25,6 +25,17 @@ int main() {
 
     Rectangle playButton = {(float)(screenWidth / 2 - 100), 340.0f, 200.0f, 60.0f};
     Rectangle hintButton = {(float)(gridX + cols * cellSize + 20), (float)(gridY + 20), 120.0f, 42.0f};
+    const std::vector<std::string> hintModes = {"BFS", "DFS", "IDS", "Greedy v1", "Greedy v2"};
+    std::vector<Rectangle> hintBoxes;
+    for (int i = 0; i < (int)hintModes.size(); i++) {
+        hintBoxes.push_back({
+            (float)(gridX + cols * cellSize + 20),
+            (float)(gridY + 70 + i * 50),
+            120.0f,
+            42.0f
+        });
+    }
+
 
     int stepsTaken = 0;
     
@@ -65,6 +76,8 @@ int main() {
     bool hasHint = false;
     Action currentHint;
     std::string hintText = "";
+    bool showHintMenu = false;
+    std::vector<Action> hintSolution;
 
     while (!WindowShouldClose()) {
         if (IsKeyPressed(KEY_R)) {
@@ -74,6 +87,7 @@ int main() {
             gameWon = false;
             hasHint = false;
             hintText = "";
+            showHintMenu = false;
         }
         if (state == MENU) {
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
@@ -86,15 +100,19 @@ int main() {
             if (!gameWon && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                 Vector2 mousePos = GetMousePosition();
                 if (CheckCollisionPointRec(mousePos, hintButton)) {
-                    int s;
-                    std::cout<<"Choose Search Algorithm: \n";
-                    std::cout<<"1. BFS \n";
-                    std::cout<<"2. DFS \n";
-                    std::cout<<"3. IDS \n";
-                    std::cout<<"4. Greedy v1 \n";
-                    std::cout<<"5. Greedy v2 \n";
-                    std::cin >> s;
-                    std::vector<Action> hintSolution;
+                    showHintMenu = !showHintMenu;
+                } else if (showHintMenu) {
+                    int s = -1;
+                    for (int i = 0; i < (int)hintBoxes.size(); i++) {
+                        if (CheckCollisionPointRec(mousePos, hintBoxes[i])) {
+                            s = i + 1;
+                            break;
+                        }
+                    }
+
+                    if (s == -1) {
+                        showHintMenu = false;
+                    } else {
 
                     switch(s){
                         case 1:
@@ -114,18 +132,21 @@ int main() {
                             break;
                     }
 
-                    if (!hintSolution.empty()) {
-                        currentHint = hintSolution[0];
-                        hasHint = true;
-                        selectedRobot = currentHint.robot;
+                        if (!hintSolution.empty()) {
+                            currentHint = hintSolution[0];
+                            hasHint = true;
+                            selectedRobot = currentHint.robot;
 
-                        hintText = "Hint: ";
-                        hintText += robotTypeToString(currentHint.robot);
-                        hintText += " ";
-                        hintText += directionToString(currentHint.dir);
-                    } else {
-                        hasHint = false;
-                        hintText = "No solution found";
+                            hintText = "Hint: ";
+                            hintText += robotTypeToString(currentHint.robot);
+                            hintText += " ";
+                            hintText += directionToString(currentHint.dir);
+                        } else {
+                            hasHint = false;
+                            hintText = "No solution found";
+                        }
+
+                        showHintMenu = false;
                     }
                 } else {
                     // Calculate on-screen positions of robots
@@ -278,8 +299,15 @@ int main() {
             DrawRectangleRec(hintButton, LIGHTGRAY);
             DrawRectangleLinesEx(hintButton, 2, DARKGRAY);
             DrawText("Hint", (int)hintButton.x + 36, (int)hintButton.y + 10, 20, BLACK);
-            if (!hintText.empty()) {
-                DrawText(hintText.c_str(), (int)hintButton.x - 20, (int)hintButton.y + 60, 20, DARKGRAY);
+            if (showHintMenu) {
+                for (int i = 0; i < (int)hintModes.size(); i++) {
+                    DrawRectangleRec(hintBoxes[i], LIGHTGRAY);
+                    DrawRectangleLinesEx(hintBoxes[i], 2, DARKGRAY);
+                    DrawText(hintModes[i].c_str(), (int)hintBoxes[i].x + 10, (int)hintBoxes[i].y + 10, 20, BLACK);
+                }
+            }
+            if (!showHintMenu && !hintText.empty()) {
+                DrawText(hintText.c_str(), (int)hintButton.x , (int)hintButton.y + 60, 20, DARKGRAY);
             }
         }
 
