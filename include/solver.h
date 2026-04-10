@@ -19,3 +19,7 @@ std::vector<Action> solveIDS(const GameState &initState, const GameBoard &board)
 std::vector<Action> solveGreedy1(const GameState &initState, const GameBoard &board);
 
 std::vector<Action> solveGreedy2(const GameState &initState, const GameBoard &board);
+
+std::vector<Action> solveA(const GameState &initState, const GameBoard &board);
+
+std::vector<Action> solveWeightedA(const GameState &initState, const GameBoard &board);

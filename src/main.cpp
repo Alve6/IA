@@ -25,17 +25,16 @@ int main() {
 
     Rectangle playButton = {(float)(screenWidth / 2 - 100), 340.0f, 200.0f, 60.0f};
     Rectangle hintButton = {(float)(gridX + cols * cellSize + 20), (float)(gridY + 20), 120.0f, 42.0f};
-    const std::vector<std::string> hintModes = {"BFS", "DFS", "IDS", "Greedy v1", "Greedy v2"};
+    const std::vector<std::string> hintModes = {"BFS", "DFS", "IDS", "Greedy v1", "Greedy v2", "A*", "Weighted A*"};
     std::vector<Rectangle> hintBoxes;
     for (int i = 0; i < (int)hintModes.size(); i++) {
         hintBoxes.push_back({
             (float)(gridX + cols * cellSize + 20),
             (float)(gridY + 70 + i * 50),
-            120.0f,
+            160.0f,
             42.0f
         });
     }
-
 
     int stepsTaken = 0;
     
@@ -130,6 +129,12 @@ int main() {
                         case 5:
                             hintSolution = solveGreedy2(gameState, gameBoard);
                             break;
+                        case 6:
+                            hintSolution = solveA(gameState, gameBoard);
+                            break;
+                        case 7:
+                            hintSolution = solveWeightedA(gameState, gameBoard);
+                            break;    
                     }
 
                         if (!hintSolution.empty()) {

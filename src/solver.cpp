@@ -4,6 +4,7 @@
 #include <queue>
 #include <stack>
 #include <algorithm>
+#include <map>
 #include <set>
 #include <cmath>
 
@@ -15,11 +16,14 @@ struct Node {
     std::vector<Node *> children;
     // For IDS
     int depth;
+    int moves;
 
     Node(const GameState &state, const Action &lastAction) {
         parent = nullptr;
         this->state = state;
         this->lastAction = lastAction;
+        depth = 0;
+        moves = 0;
     }
     void addChild(Node *child) {
         this->children.push_back(child);
@@ -75,14 +79,40 @@ static int stateDistanceToGoal(const GameState &state, const iVector2 &goal, int
     }   
 }
 
+
 struct GreedyCompare {
     iVector2 goal;
     int choice;
 
     explicit GreedyCompare(const iVector2 &goal, int choice) : goal(goal), choice(choice) {}
 
+    
     bool operator()(const Node *a, const Node *b) const {
         return stateDistanceToGoal(a->state, goal,choice) > stateDistanceToGoal(b->state, goal,choice);
+    }
+};
+
+struct ACompare {
+    iVector2 goal;
+    int choice;
+
+    explicit ACompare(const iVector2 &goal, int choice) : goal(goal), choice(choice) {}
+
+    
+    bool operator()(const Node *a, const Node *b) const {
+        return stateDistanceToGoal(a->state, goal,choice)+a->moves > stateDistanceToGoal(b->state, goal,choice)+b->moves;
+    }
+};
+
+struct WeightedACompare {
+    iVector2 goal;
+    int choice;
+    double weight;
+
+    explicit WeightedACompare(const iVector2 &goal, int choice, double weight) : goal(goal), choice(choice), weight(weight) {}
+
+    bool operator()(const Node *a, const Node *b) const {
+        return weight*stateDistanceToGoal(a->state, goal,choice)+a->moves > weight*stateDistanceToGoal(b->state, goal,choice)+b->moves;
     }
 };
 
@@ -300,6 +330,112 @@ std::vector<Action> solveGreedy2(const GameState &initState, const GameBoard &bo
             if (root.hasState(state))
                 continue;
             Node *newChild = new Node(state, action);
+            node->addChild(newChild);
+            p.push(newChild);
+            nodeCount++;
+            if (isWinningState(state, board)) {
+                final = newChild;
+                break;
+            }
+        }
+        // std::cout << "Node count: " << nodeCount << std::endl;
+    }
+    std::vector<Action> result;
+    if (final != nullptr) {
+        Node *current = final;
+        
+        // result.push_back(current->lastAction);
+        while (current->parent != nullptr) {
+            result.push_back(current->lastAction);
+            current = current->parent;
+        }
+        std::reverse(result.begin(), result.end());
+    }
+    return result;
+}
+
+
+std::vector<Action> solveA(const GameState &initState, const GameBoard &board) {
+    int choice =1;
+    Node root(initState, {ROBOT_BLUE, DIR_INVALID});
+    iVector2 goal = findGoalPos(board);
+    std::priority_queue<Node*, std::vector<Node*>, ACompare> p((ACompare(goal,choice)));
+    std::map<GameState, int> bestCost;
+    root.moves =0;
+    bestCost[initState] = 0;
+    p.push(&root);
+    Node *final = nullptr;
+    int nodeCount = 1;
+    while (!p.empty() && final == nullptr) {
+        Node *node = p.top();
+        p.pop();
+        if (node->moves > bestCost[node->state])
+            continue;
+        std::vector<std::pair<GameState, Action>> nextStates = getNextStates(node->state, board);
+        int moves = node->moves;
+        for (std::pair<GameState, Action> pair : nextStates) {
+            GameState state = pair.first;
+            Action action = pair.second;
+            int nextMoves = moves + 1;
+            auto existing = bestCost.find(state);
+            if (existing != bestCost.end() && existing->second <= nextMoves)
+                continue;
+            bestCost[state] = nextMoves;
+            Node *newChild = new Node(state, action);
+            newChild->moves = nextMoves;
+            node->addChild(newChild);
+            p.push(newChild);
+            nodeCount++;
+            if (isWinningState(state, board)) {
+                final = newChild;
+                break;
+            }
+        }
+        // std::cout << "Node count: " << nodeCount << std::endl;
+    }
+    std::vector<Action> result;
+    if (final != nullptr) {
+        Node *current = final;
+        
+        // result.push_back(current->lastAction);
+        while (current->parent != nullptr) {
+            result.push_back(current->lastAction);
+            current = current->parent;
+        }
+        std::reverse(result.begin(), result.end());
+    }
+    return result;
+}
+
+std::vector<Action> solveWeightedA(const GameState &initState, const GameBoard &board) {
+    int choice =1;
+    double weight = 1.2;
+    Node root(initState, {ROBOT_BLUE, DIR_INVALID});
+    iVector2 goal = findGoalPos(board);
+    std::priority_queue<Node*, std::vector<Node*>, WeightedACompare> p((WeightedACompare(goal,choice,weight)));
+    std::map<GameState, int> bestCost;
+    root.moves =0;
+    bestCost[initState] = 0;
+    p.push(&root);
+    Node *final = nullptr;
+    int nodeCount = 1;
+    while (!p.empty() && final == nullptr) {
+        Node *node = p.top();
+        p.pop();
+        if (node->moves > bestCost[node->state])
+            continue;
+        std::vector<std::pair<GameState, Action>> nextStates = getNextStates(node->state, board);
+        int moves = node->moves;
+        for (std::pair<GameState, Action> pair : nextStates) {
+            GameState state = pair.first;
+            Action action = pair.second;
+            int nextMoves = moves + 1;
+            auto existing = bestCost.find(state);
+            if (existing != bestCost.end() && existing->second <= nextMoves)
+                continue;
+            bestCost[state] = nextMoves;
+            Node *newChild = new Node(state, action);
+            newChild->moves = nextMoves;
             node->addChild(newChild);
             p.push(newChild);
             nodeCount++;
