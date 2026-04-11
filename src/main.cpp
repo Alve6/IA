@@ -8,6 +8,35 @@
 #include <algorithm>
 #include <queue>
 
+static std::vector<Action> runSelectedAlgorithm(int selection, const GameState &gameState, const GameBoard &gameBoard, std::string &algorithmName) {
+    switch (selection) {
+        case 1:
+            algorithmName = "BFS";
+            return solveBFS(gameState, gameBoard);
+        case 2:
+            algorithmName = "DFS";
+            return solveDFS(gameState, gameBoard);
+        case 3:
+            algorithmName = "IDS";
+            return solveIDS(gameState, gameBoard);
+        case 4:
+            algorithmName = "Greedy v1";
+            return solveGreedy1(gameState, gameBoard);
+        case 5:
+            algorithmName = "Greedy v2";
+            return solveGreedy2(gameState, gameBoard);
+        case 6:
+            algorithmName = "A*";
+            return solveA(gameState, gameBoard);
+        case 7:
+            algorithmName = "Weighted A*";
+            return solveWeightedA(gameState, gameBoard);
+        default:
+            algorithmName = "";
+            return {};
+    }
+}
+
 int main() {
     const int screenWidth = 900;
     const int screenHeight = 720;
@@ -25,6 +54,7 @@ int main() {
 
     Rectangle playButton = {(float)(screenWidth / 2 - 100), 340.0f, 200.0f, 60.0f};
     Rectangle hintButton = {(float)(gridX + cols * cellSize + 20), (float)(gridY + 20), 120.0f, 42.0f};
+    Rectangle solveButton = {(float)(gridX + cols * cellSize + 20), (float)(gridY + 470), 120.0f, 42.0f};
     const std::vector<std::string> hintModes = {"BFS", "DFS", "IDS", "Greedy v1", "Greedy v2", "A*", "Weighted A*"};
     std::vector<Rectangle> hintBoxes;
     for (int i = 0; i < (int)hintModes.size(); i++) {
@@ -76,7 +106,14 @@ int main() {
     Action currentHint;
     std::string hintText = "";
     bool showHintMenu = false;
+    bool selectingAutoSolve = false;
     std::vector<Action> hintSolution;
+    bool autoSolving = false;
+    std::vector<Action> autoSolution;
+    int autoStepIndex = 0;
+    float autoStepTimer = 0.0f;
+    const float autoStepDelay = 0.45f; 
+    std::string selectedAlgorithm = "";
 
     while (!WindowShouldClose()) {
         if (IsKeyPressed(KEY_R)) {
@@ -87,6 +124,13 @@ int main() {
             hasHint = false;
             hintText = "";
             showHintMenu = false;
+
+            autoSolving = false;
+            autoSolution.clear();
+            autoStepIndex = 0;
+            autoStepTimer = 0.0f;
+            selectedAlgorithm = "";
+            selectingAutoSolve = false;
         }
         if (state == MENU) {
             if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
@@ -96,10 +140,14 @@ int main() {
                 }
             }
         } else {
-            if (!gameWon && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            if (!gameWon && !autoSolving && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
                 Vector2 mousePos = GetMousePosition();
                 if (CheckCollisionPointRec(mousePos, hintButton)) {
                     showHintMenu = !showHintMenu;
+                    selectingAutoSolve = false;
+                } else if (CheckCollisionPointRec(mousePos, solveButton)) {
+                    showHintMenu = !showHintMenu;
+                    selectingAutoSolve = true;
                 } else if (showHintMenu) {
                     int s = -1;
                     for (int i = 0; i < (int)hintBoxes.size(); i++) {
@@ -112,43 +160,35 @@ int main() {
                     if (s == -1) {
                         showHintMenu = false;
                     } else {
+                        std::vector<Action> solution = runSelectedAlgorithm(s, gameState, gameBoard, selectedAlgorithm);
 
-                    switch(s){
-                        case 1:
-                            hintSolution = solveBFS(gameState, gameBoard);
-                            break;
-                        case 2:
-                            hintSolution = solveDFS(gameState, gameBoard);
-                            break;
-                        case 3:
-                            hintSolution = solveIDS(gameState, gameBoard);
-                            break;
-                        case 4:
-                            hintSolution = solveGreedy1(gameState, gameBoard);
-                            break;                        
-                        case 5:
-                            hintSolution = solveGreedy2(gameState, gameBoard);
-                            break;
-                        case 6:
-                            hintSolution = solveA(gameState, gameBoard);
-                            break;
-                        case 7:
-                            hintSolution = solveWeightedA(gameState, gameBoard);
-                            break;    
-                    }
+                        if (selectingAutoSolve) {
+                            autoSolution = solution;
+                            autoStepIndex = 0;
+                            autoStepTimer = 0.0f;
+                            autoSolving = !autoSolution.empty();
 
-                        if (!hintSolution.empty()) {
-                            currentHint = hintSolution[0];
-                            hasHint = true;
-                            selectedRobot = currentHint.robot;
-
-                            hintText = "Hint: ";
-                            hintText += robotTypeToString(currentHint.robot);
-                            hintText += " ";
-                            hintText += directionToString(currentHint.dir);
-                        } else {
                             hasHint = false;
-                            hintText = "No solution found";
+                            hintSolution.clear();
+                            hintText = autoSolving
+                                ? ("Solving with " + selectedAlgorithm)
+                                : "No solution found";
+                        } else {
+                            hintSolution = solution;
+
+                            if (!hintSolution.empty()) {
+                                currentHint = hintSolution[0];
+                                hasHint = true;
+                                selectedRobot = currentHint.robot;
+
+                                hintText = "Hint (" + selectedAlgorithm + "): ";
+                                hintText += robotTypeToString(currentHint.robot);
+                                hintText += " ";
+                                hintText += directionToString(currentHint.dir);
+                            } else {
+                                hasHint = false;
+                                hintText = "No solution found";
+                            }
                         }
 
                         showHintMenu = false;
@@ -212,11 +252,48 @@ int main() {
                                     gameState = newState;
                                     stepsTaken++;
                                     gameWon = isWinningState(gameState, gameBoard);
+
                                     hasHint = false;
+                                    hintSolution.clear();
                                     hintText = "";
+
+                                    autoSolving = false;
+                                    autoSolution.clear();
+                                    autoStepIndex = 0;
+                                    autoStepTimer = 0.0f;
                                 }
                             }
                         }
+                    }
+                }
+            }
+            
+            if (autoSolving && !gameWon) {
+                autoStepTimer += GetFrameTime();
+
+                if (autoStepIndex < (int)autoSolution.size() && autoStepTimer >= autoStepDelay) {
+                    autoStepTimer = 0.0f;
+
+                    Action step = autoSolution[autoStepIndex];
+                    selectedRobot = step.robot;
+
+                    GameState newState = slideMove(step.robot, step.dir, gameState, gameBoard);
+                    if (newState != gameState) {
+                        gameState = newState;
+                        stepsTaken++;
+                        gameWon = isWinningState(gameState, gameBoard);
+                    }
+
+                    autoStepIndex++;
+                }
+
+                if (autoStepIndex >= (int)autoSolution.size() || gameWon) {
+                    autoSolving = false;
+
+                    if (gameWon) {
+                        hintText = "Solved with " + selectedAlgorithm + " in " + std::to_string(stepsTaken) + " moves";
+                    } else {
+                        hintText = "Auto-solve finished";
                     }
                 }
             }
@@ -234,6 +311,10 @@ int main() {
             DrawText("Ricochet", gridX, 20, 36, BLACK);
             std::string scoreText = "Steps: "+std::to_string(stepsTaken);
             DrawText(scoreText.c_str(), gridX + 260, 28, 28, BLACK);
+            if (autoSolving) {
+                std::string solvingText = "Auto-solving: " + selectedAlgorithm + " (" + std::to_string(autoStepIndex) + "/" + std::to_string((int)autoSolution.size()) + ")";
+                DrawText(solvingText.c_str(), gridX, gridY + rows * cellSize + 30, 22, DARKGRAY);
+            }
             DrawText("R to reset", gridX + 500, 34, 20, DARKGRAY);
 
             if (gameWon) {
@@ -304,6 +385,9 @@ int main() {
             DrawRectangleRec(hintButton, LIGHTGRAY);
             DrawRectangleLinesEx(hintButton, 2, DARKGRAY);
             DrawText("Hint", (int)hintButton.x + 36, (int)hintButton.y + 10, 20, BLACK);
+            DrawRectangleRec(solveButton, LIGHTGRAY);
+            DrawRectangleLinesEx(solveButton, 2, DARKGRAY);
+            DrawText("Solve", (int)solveButton.x + 30, (int)solveButton.y + 10, 20, BLACK);
             if (showHintMenu) {
                 for (int i = 0; i < (int)hintModes.size(); i++) {
                     DrawRectangleRec(hintBoxes[i], LIGHTGRAY);
@@ -312,7 +396,7 @@ int main() {
                 }
             }
             if (!showHintMenu && !hintText.empty()) {
-                DrawText(hintText.c_str(), (int)hintButton.x , (int)hintButton.y + 60, 20, DARKGRAY);
+                DrawText(hintText.c_str(), gridX, gridY + rows * cellSize + 60, 20, DARKGRAY);
             }
         }
 
