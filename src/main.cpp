@@ -53,14 +53,14 @@ int main() {
     ScreenState state = MENU;
 
     Rectangle playButton = {(float)(screenWidth / 2 - 100), 340.0f, 200.0f, 60.0f};
-    Rectangle hintButton = {(float)(gridX + cols * cellSize + 20), (float)(gridY + 20), 120.0f, 42.0f};
-    Rectangle solveButton = {(float)(gridX + cols * cellSize + 20), (float)(gridY + 470), 120.0f, 42.0f};
+    Rectangle hintButton = {(float)(gridX + cols * cellSize + 20), (float)(gridY + 62), 120.0f, 42.0f};
+    Rectangle solveButton = {(float)(gridX + cols * cellSize + 20), (float)(gridY), 120.0f, 42.0f};
     const std::vector<std::string> hintModes = {"BFS", "DFS", "IDS", "Greedy v1", "Greedy v2", "A*", "Weighted A*"};
     std::vector<Rectangle> hintBoxes;
     for (int i = 0; i < (int)hintModes.size(); i++) {
         hintBoxes.push_back({
             (float)(gridX + cols * cellSize + 20),
-            (float)(gridY + 70 + i * 50),
+            (float)(gridY + 120 + i * 50),
             160.0f,
             42.0f
         });
@@ -105,6 +105,7 @@ int main() {
     bool hasHint = false;
     Action currentHint;
     std::string hintText = "";
+    std::string victoryText = "";
     bool showHintMenu = false;
     bool selectingAutoSolve = false;
     std::vector<Action> hintSolution;
@@ -291,7 +292,7 @@ int main() {
                     autoSolving = false;
 
                     if (gameWon) {
-                        hintText = "Solved with " + selectedAlgorithm + " in " + std::to_string(stepsTaken) + " moves";
+                        victoryText = "Solved with " + selectedAlgorithm + " in " + std::to_string(stepsTaken) + " moves";
                     } else {
                         hintText = "Auto-solve finished";
                     }
@@ -315,11 +316,12 @@ int main() {
                 std::string solvingText = "Auto-solving: " + selectedAlgorithm + " (" + std::to_string(autoStepIndex) + "/" + std::to_string((int)autoSolution.size()) + ")";
                 DrawText(solvingText.c_str(), gridX, gridY + rows * cellSize + 30, 22, DARKGRAY);
             }
-            DrawText("R to reset", gridX + 500, 34, 20, DARKGRAY);
+            DrawText("Press R to reset", gridX + 410, 34, 20, DARKGRAY);
 
             if (gameWon) {
-                DrawText("YOU WIN!", gridX + 180, gridY + rows * cellSize + 30, 32, GREEN);
-                DrawText("Press R to play again", gridX + 120, gridY + rows * cellSize + 70, 24, DARKGRAY);
+                DrawText("YOU WIN!", gridX + 140, gridY + rows * cellSize + 30, 32, GREEN);
+                DrawText(victoryText.c_str(), gridX+50, gridY + rows * cellSize + 80, 20, DARKGRAY);
+                hintText = "";
             }
 
             for (int y = 0; y < rows; y++) {
@@ -396,7 +398,7 @@ int main() {
                 }
             }
             if (!showHintMenu && !hintText.empty()) {
-                DrawText(hintText.c_str(), gridX, gridY + rows * cellSize + 60, 20, DARKGRAY);
+                DrawText(hintText.c_str(), gridX, gridY + rows * cellSize + 80, 20, DARKGRAY);
             }
         }
 
