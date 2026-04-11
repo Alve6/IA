@@ -1,5 +1,6 @@
 #include "game.h"
 #include "solver.h"
+#include "levels.h"
 
 #include "raylib.h"
 
@@ -12,10 +13,15 @@ int main() {
     const int screenWidth = 900;
     const int screenHeight = 720;
     const int cellSize = 48;
-    const int cols = 8;
-    const int rows = 8;
+
+    LevelData level = loadLevel("lvl.txt");
+    GameState gameState = level.state;
+    GameBoard gameBoard = level.board;
+    const int cols = gameBoard.width;
+    const int rows = gameBoard.height;
     const int gridX = (screenWidth - cols * cellSize) / 2;
     const int gridY = 90;
+    
 
     InitWindow(screenWidth, screenHeight, "Ricochet");
     SetTargetFPS(60);
@@ -28,35 +34,34 @@ int main() {
 
     int stepsTaken = 0;
     
-    GameBoard gameBoard(cols, rows);
-    GameState gameState;
-    gameState.bluePos = {0,0};
-    gameState.redPos = {7,0};
-    gameState.greenPos = {4,0};
-    gameState.orangePos = {3,0};
-    gameBoard.addTileFlag({3,0}, TILE_WALL_EAST);
-    gameBoard.addTileFlag({5,0}, TILE_WALL_SOUTH);
-    gameBoard.addTileFlag({0,1}, TILE_WALL_EAST);
-    gameBoard.addTileFlag({3,1}, TILE_WALL_SOUTH);
-    gameBoard.addTileFlag({6,1}, TILE_WALL_EAST);
-    gameBoard.addTileFlag({0,2}, TILE_WALL_SOUTH);
-    gameBoard.addTileFlag({1,2}, TILE_WALL_EAST);
-    gameBoard.addTileFlag({4,2}, TILE_WALL_EAST);
-    gameBoard.addTileFlag({7,2}, TILE_WALL_SOUTH);
-    gameBoard.addTileFlag({2,3}, TILE_WALL_SOUTH);
-    gameBoard.addTileFlag({3,3}, TILE_WALL_EAST);
-    gameBoard.addTileFlag({5,3}, TILE_WALL_EAST);
-    gameBoard.addTileFlag({1,4}, TILE_WALL_SOUTH);
-    gameBoard.addTileFlag({2,4}, TILE_GOAL);
-    gameBoard.addTileFlag({3,4}, TILE_WALL_SOUTH);
-    gameBoard.addTileFlag({4,4}, TILE_WALL_EAST);
-    gameBoard.addTileFlag({6,4}, TILE_WALL_SOUTH);
-    gameBoard.addTileFlag({2,5}, TILE_WALL_SOUTH);
-    gameBoard.addTileFlag({5,5}, TILE_WALL_SOUTH);
-    gameBoard.addTileFlag({7,5}, TILE_WALL_SOUTH);
-    gameBoard.addTileFlag({3,6}, TILE_WALL_SOUTH);
-    gameBoard.addTileFlag({6,6}, TILE_WALL_SOUTH);
-
+    // GameBoard gameBoard(cols, rows);
+    // GameState gameState;
+    // gameState.bluePos = {0,0};
+    // gameState.redPos = {7,0};
+    // gameState.greenPos = {4,0};
+    // gameState.orangePos = {3,0};
+    // gameBoard.addTileFlag({3,0}, TILE_WALL_EAST);
+    // gameBoard.addTileFlag({5,0}, TILE_WALL_SOUTH);
+    // gameBoard.addTileFlag({0,1}, TILE_WALL_EAST);
+    // gameBoard.addTileFlag({3,1}, TILE_WALL_SOUTH);
+    // gameBoard.addTileFlag({6,1}, TILE_WALL_EAST);
+    // gameBoard.addTileFlag({0,2}, TILE_WALL_SOUTH);
+    // gameBoard.addTileFlag({1,2}, TILE_WALL_EAST);
+    // gameBoard.addTileFlag({4,2}, TILE_WALL_EAST);
+    // gameBoard.addTileFlag({7,2}, TILE_WALL_SOUTH);
+    // gameBoard.addTileFlag({2,3}, TILE_WALL_SOUTH);
+    // gameBoard.addTileFlag({3,3}, TILE_WALL_EAST);
+    // gameBoard.addTileFlag({5,3}, TILE_WALL_EAST);
+    // gameBoard.addTileFlag({1,4}, TILE_WALL_SOUTH);
+    // gameBoard.addTileFlag({2,4}, TILE_GOAL);
+    // gameBoard.addTileFlag({3,4}, TILE_WALL_SOUTH);
+    // gameBoard.addTileFlag({4,4}, TILE_WALL_EAST);
+    // gameBoard.addTileFlag({6,4}, TILE_WALL_SOUTH);
+    // gameBoard.addTileFlag({2,5}, TILE_WALL_SOUTH);
+    // gameBoard.addTileFlag({5,5}, TILE_WALL_SOUTH);
+    // gameBoard.addTileFlag({7,5}, TILE_WALL_SOUTH);
+    // gameBoard.addTileFlag({3,6}, TILE_WALL_SOUTH);
+    // gameBoard.addTileFlag({6,6}, TILE_WALL_SOUTH);
     GameState initialGameState = gameState;
     bool gameWon = isWinningState(gameState, gameBoard);
 

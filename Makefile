@@ -1,4 +1,4 @@
-src := src/main.cpp src/game.cpp src/solver.cpp
+src := src/main.cpp src/game.cpp src/solver.cpp src/levels.cpp
 
 run: game
 	./game
