@@ -53,7 +53,8 @@ struct GameBoard {
     int height;
     
     GameBoard(int width, int height);
-
+    GameBoard(const GameBoard &other);
+    
     ~GameBoard();
 
     // Get all flags of a specific tile

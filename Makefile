@@ -1,4 +1,4 @@
-SRC := src/main.cpp src/game.cpp src/solver.cpp
+SRC := src/main.cpp src/game.cpp src/solver.cpp src/levels.cpp
 RAYLIB_PREFIX := $(HOME)/.local
 
 CXX := g++

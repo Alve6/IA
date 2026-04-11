@@ -70,6 +70,17 @@ GameBoard::GameBoard(int width, int height) {
     this->height = height;
 }
 
+GameBoard::GameBoard(const GameBoard &other) {
+    this->width = other.width;
+    this->height = other.height;
+    this->board = (char*)malloc(sizeof(char) * (width * height));
+    if (!board) {
+        std::cerr << "Failed to allocate memory for the board\n";
+        exit(EXIT_FAILURE);
+    }
+    memcpy(this->board, other.board, width*height);
+}
+
 GameBoard::~GameBoard() {
     free(board);
 }
