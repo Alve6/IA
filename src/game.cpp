@@ -59,6 +59,13 @@ bool GameState::operator<(const GameState &other) const {
 
     return false;
 }
+
+// Only meant to allow declaring a gameBoard and copying to it later
+GameBoard::GameBoard() {
+    board = nullptr;
+    this->width = 0;
+    this->height = 0;
+}
 GameBoard::GameBoard(int width, int height) {
     board = (char*)malloc(sizeof(char) * (width * height));
     if (!board) {
@@ -69,7 +76,6 @@ GameBoard::GameBoard(int width, int height) {
     this->width = width;
     this->height = height;
 }
-
 GameBoard::GameBoard(const GameBoard &other) {
     this->width = other.width;
     this->height = other.height;
@@ -80,7 +86,20 @@ GameBoard::GameBoard(const GameBoard &other) {
     }
     memcpy(this->board, other.board, width*height);
 }
-
+GameBoard &GameBoard::operator=(const GameBoard &other) {
+    if (this == &other)
+        return *this;
+    this->width = other.width;
+    this->height = other.height;
+    free(this->board);
+    this->board = (char*)malloc(sizeof(char) * (width * height));
+    if (!board) {
+        std::cerr << "Failed to allocate memory for the board\n";
+        exit(EXIT_FAILURE);
+    }
+    memcpy(this->board, other.board, width*height);
+    return *this;
+}
 GameBoard::~GameBoard() {
     free(board);
 }

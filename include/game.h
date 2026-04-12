@@ -51,9 +51,10 @@ struct GameBoard {
     char* board;
     int width;
     int height;
-    
+    GameBoard();
     GameBoard(int width, int height);
     GameBoard(const GameBoard &other);
+    GameBoard &operator=(const GameBoard &other);
     
     ~GameBoard();
 
