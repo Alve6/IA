@@ -307,7 +307,7 @@ SolverResult solveIDS(const GameState &initState, const GameBoard &board) {
 
     SolverResult result;
     result.algorithmName = "IDS";
-
+    result.maxFrontierSize = 1;
     Node root(initState, {ROBOT_BLUE, DIR_INVALID});
     root.depth = 0;
 
@@ -329,6 +329,8 @@ SolverResult solveIDS(const GameState &initState, const GameBoard &board) {
             result.maxFrontierSize = stack.size();
 
         while (!stack.empty() && final == nullptr) {
+            if (stack.size() > result.maxFrontierSize)
+                result.maxFrontierSize = stack.size();
             Node *node = stack.top();
             stack.pop();
 
@@ -376,7 +378,7 @@ SolverResult solveIDS(const GameState &initState, const GameBoard &board) {
     result.solutionCost = (int)result.actions.size();
     result.solutionDepth = (int)result.actions.size();
     result.visitedStates = allVisitedStates.size();
-    result.approxMemoryBytes = approximateMemoryUsage(nodeCount, 0, allVisitedStates.size());
+    result.approxMemoryBytes = approximateMemoryUsage(result.solutionDepth, result.maxFrontierSize, 0);
 
     auto end = std::chrono::high_resolution_clock::now();
     result.elapsedMs = std::chrono::duration<double, std::milli>(end - start).count();
