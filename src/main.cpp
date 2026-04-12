@@ -9,6 +9,10 @@
 #include <algorithm>
 #include <queue>
 #include <filesystem>
+#include <fstream>
+#include <chrono>
+#include <sstream>
+#include <ctime>
 
 struct LevelButton {
     Rectangle rect;
@@ -33,6 +37,7 @@ ScreenState state = MENU;
 
 Rectangle hintButton;
 Rectangle solveButton;
+Rectangle solveToFileButton;
 std::vector<LevelButton> levelButtons;
 std::string chosenLevelName = "";
 const std::vector<std::string> hintModes = {"BFS", "DFS", "IDS", "Greedy v1", "Greedy v2", "A*", "Weighted A*"};
@@ -46,6 +51,7 @@ std::string hintText = "";
 std::string victoryText = "";
 bool showHintMenu = false;
 bool selectingAutoSolve = false;
+bool selectingSolveToFile = false;
 std::vector<Action> hintSolution;
 bool autoSolving = false;
 std::vector<Action> autoSolution;
@@ -83,7 +89,70 @@ static std::vector<Action> runSelectedAlgorithm(int selection, const GameState &
     }
 }
 
+struct SolverExecutionResult {
+    std::vector<Action> solution;
+    double elapsedMs;
+};
 
+static SolverExecutionResult runSelectedAlgorithmTimed(int selection, const GameState &gameState, const GameBoard &gameBoard, std::string &algorithmName) {
+    auto start = std::chrono::high_resolution_clock::now();
+    std::vector<Action> solution = runSelectedAlgorithm(selection, gameState, gameBoard, algorithmName);
+    auto end = std::chrono::high_resolution_clock::now();
+
+    double elapsedMs = std::chrono::duration<double, std::milli>(end - start).count();
+    return {solution, elapsedMs};
+}
+static std::string buildOutputFileName(const std::string &levelName, const std::string &algorithmName) {
+    std::filesystem::create_directories("./results");
+
+    std::string cleanAlgorithm = algorithmName;
+    for (char &c : cleanAlgorithm) {
+        if (c == ' ' || c == '*')
+            c = '_';
+    }
+
+    std::string levelStem = std::filesystem::path(levelName).stem().string();
+    std::time_t now = std::time(nullptr);
+
+    return "./results/" + levelStem + "_" + cleanAlgorithm + "_" + std::to_string(now) + ".txt";
+}
+
+static bool saveSolutionToFile(
+    const std::string &filePath,
+    const std::string &levelName,
+    const std::string &algorithmName,
+    const GameState &initialState,
+    const std::vector<Action> &solution,
+    double elapsedMs
+) {
+    std::ofstream out(filePath);
+    if (!out.is_open())
+        return false;
+
+    out << "Ricochet Robots - Solver Result\n";
+    out << "Level: " << levelName << "\n";
+    out << "Algorithm: " << algorithmName << "\n";
+    out << "Solved: " << (!solution.empty() ? "YES" : "NO") << "\n";
+    out << "Time (ms): " << elapsedMs << "\n";
+    out << "Move count: " << solution.size() << "\n\n";
+
+    out << "Initial State\n";
+    out << "Blue: " << initialState.bluePos.x << " " << initialState.bluePos.y << "\n";
+    out << "Red: " << initialState.redPos.x << " " << initialState.redPos.y << "\n";
+    out << "Green: " << initialState.greenPos.x << " " << initialState.greenPos.y << "\n";
+    out << "Orange: " << initialState.orangePos.x << " " << initialState.orangePos.y << "\n\n";
+
+    out << "Solution\n";
+    if (solution.empty()) {
+        out << "No solution found.\n";
+    } else {
+        for (size_t i = 0; i < solution.size(); i++) {
+            out << (i + 1) << ". " << actionToString(solution[i]) << "\n";
+        }
+    }
+
+    return true;
+}
 
 void initLevelButtons() {
     std::vector<std::string> levelNames;
@@ -108,12 +177,15 @@ void initLevelButtons() {
     }
 }
 void initHintButtons() {
-    hintButton = {(float)(gridX + cols * cellSize + 20), (float)(gridY + 62), 120.0f, 42.0f};
-    solveButton = {(float)(gridX + cols * cellSize + 20), (float)(gridY), 120.0f, 42.0f};
+    solveButton = {(float)(gridX + cols * cellSize + 20), (float)(gridY), 150.0f, 42.0f};
+    hintButton = {(float)(gridX + cols * cellSize + 20), (float)(gridY + 52), 150.0f, 42.0f};
+    solveToFileButton = {(float)(gridX + cols * cellSize + 20), (float)(gridY + 104), 150.0f, 42.0f};
+
+    hintBoxes.clear();
     for (int i = 0; i < (int)hintModes.size(); i++) {
         hintBoxes.push_back({
             (float)(gridX + cols * cellSize + 20),
-            (float)(gridY + 120 + i * 50),
+            (float)(gridY + 160 + i * 50),
             160.0f,
             42.0f
         });
@@ -176,6 +248,7 @@ void gameIterate() {
         autoStepTimer = 0.0f;
         selectedAlgorithm = "";
         selectingAutoSolve = false;
+        selectingSolveToFile = false;
     }
     // If there's a click and input is allowed (i.e. game is not won and autosolving is not running)
     if (!gameWon && !autoSolving && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
@@ -186,9 +259,15 @@ void gameIterate() {
         if (CheckCollisionPointRec(mousePos, hintButton)) {
             showHintMenu = !showHintMenu;
             selectingAutoSolve = false;
+            selectingSolveToFile = false;
         } else if (CheckCollisionPointRec(mousePos, solveButton)) {
             showHintMenu = !showHintMenu;
             selectingAutoSolve = true;
+            selectingSolveToFile = false;
+        } else if (CheckCollisionPointRec(mousePos, solveToFileButton)) {
+            showHintMenu = !showHintMenu;
+            selectingAutoSolve = false;
+            selectingSolveToFile = true;
         } else if (showHintMenu) {
             int selection = -1;
             for (int i = 0; i < (int)hintBoxes.size(); i++) {
@@ -201,9 +280,33 @@ void gameIterate() {
             if (selection == -1) {
                 showHintMenu = false;
             } else {
-                std::vector<Action> solution = runSelectedAlgorithm(selection, gameState, gameBoard, selectedAlgorithm);
+                SolverExecutionResult execution = runSelectedAlgorithmTimed(selection, gameState, gameBoard, selectedAlgorithm);
+                std::vector<Action> solution = execution.solution;
 
-                if (selectingAutoSolve) {
+                if (selectingSolveToFile) {
+                    std::string filePath = buildOutputFileName(chosenLevelName, selectedAlgorithm);
+                    bool saved = saveSolutionToFile(
+                        filePath,
+                        chosenLevelName,
+                        selectedAlgorithm,
+                        gameState,
+                        solution,
+                        execution.elapsedMs
+                    );
+
+                    hasHint = false;
+                    hintSolution.clear();
+                    autoSolving = false;
+                    autoSolution.clear();
+                    autoStepIndex = 0;
+                    autoStepTimer = 0.0f;
+
+                    if (saved) {
+                        hintText = "Solution saved to: " + filePath;
+                    } else {
+                        hintText = "Failed to save solution file";
+                    }
+                } else if (selectingAutoSolve) {
                     autoSolution = solution;
                     autoStepIndex = 0;
                     autoStepTimer = 0.0f;
@@ -436,6 +539,9 @@ void gameDraw() {
     DrawRectangleRec(solveButton, LIGHTGRAY);
     DrawRectangleLinesEx(solveButton, 2, DARKGRAY);
     DrawText("Solve", (int)solveButton.x + 30, (int)solveButton.y + 10, 20, BLACK);
+    DrawRectangleRec(solveToFileButton, LIGHTGRAY);
+    DrawRectangleLinesEx(solveToFileButton, 2, DARKGRAY);
+    DrawText("Solve to File", (int)solveToFileButton.x + 12, (int)solveToFileButton.y + 10, 20, BLACK);
     if (showHintMenu) {
         for (int i = 0; i < (int)hintModes.size(); i++) {
             DrawRectangleRec(hintBoxes[i], LIGHTGRAY);

@@ -51,6 +51,10 @@ struct Node {
     }
 };
 
+std::string actionToString(const Action &action) {
+    return robotTypeToString(action.robot) + " " + directionToString(action.dir);
+}
+
 static iVector2 findGoalPos(const GameBoard &board) {
     for (int y = 0; y < board.height; y++) {
         for (int x = 0; x < board.width; x++) {
