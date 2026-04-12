@@ -50,6 +50,15 @@ struct Node {
         }
         return false;
     }
+    bool hasAncestorState(const GameState &state) {
+        Node* node = this;
+        while (node->parent != nullptr) {
+            node = node->parent;
+            if (node->state == state)
+                return true;
+        }
+        return false;
+    }
 };
 
 std::string actionToString(const Action &action) {
@@ -335,7 +344,7 @@ SolverResult solveIDS(const GameState &initState, const GameBoard &board) {
                 GameState state = pair.first;
                 Action action = pair.second;
 
-                if (visitedThisIteration.find(state) != visitedThisIteration.end()) {
+                if (node->hasAncestorState(state)) {
                     result.repeatedStates++;
                     continue;
                 }
