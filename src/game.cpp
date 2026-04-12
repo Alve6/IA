@@ -15,6 +15,7 @@ std::string directionToString(Direction dir) {
         case DIR_INVALID:
         return "DIR_INVALID";
     }
+    return "DIR_UNKNOWN";
 }
 
 std::string robotTypeToString(RobotType robot) {
@@ -28,6 +29,7 @@ std::string robotTypeToString(RobotType robot) {
         case ROBOT_ORANGE:
         return "ROBOT_ORANGE";
     }
+    return "ROBOT_UNKNOWN";
 }
 bool iVector2::operator==(const iVector2 &other) const {
     return x == other.x && y == other.y;

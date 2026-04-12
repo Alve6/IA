@@ -1,0 +1,87 @@
+Ricochet Robots - Algorithm Comparison
+Level: 3.lvl
+
+Algorithm: BFS
+Solved: YES
+Time (ms): 454.371
+Generated states: 118042
+Expanded states: 74627
+Repeated states: 465118
+Visited states: 118043
+Max frontier size: 43416
+Approx memory (bytes): 13568144
+Move count: 15
+Solution cost: 15
+----------------------------------------
+Algorithm: DFS
+Solved: YES
+Time (ms): 66.3477
+Generated states: 27541
+Expanded states: 6307
+Repeated states: 15935
+Visited states: 27542
+Max frontier size: 21235
+Approx memory (bytes): 3254584
+Move count: 6115
+Solution cost: 6115
+----------------------------------------
+Algorithm: IDS
+Solved: NO
+Time (ms): 15.7974
+Generated states: 7184
+Expanded states: 7194
+Repeated states: 11389
+Visited states: 2966
+Max frontier size: 51
+Approx memory (bytes): 669712
+Move count: 0
+Solution cost: 0
+----------------------------------------
+Algorithm: Greedy v1
+Solved: YES
+Time (ms): 3.38085
+Generated states: 1965
+Expanded states: 360
+Repeated states: 1047
+Visited states: 1966
+Max frontier size: 1606
+Approx memory (bytes): 233040
+Move count: 32
+Solution cost: 32
+----------------------------------------
+Algorithm: Greedy v2
+Solved: YES
+Time (ms): 4.88976
+Generated states: 2785
+Expanded states: 646
+Repeated states: 1930
+Visited states: 2786
+Max frontier size: 2140
+Approx memory (bytes): 329152
+Move count: 60
+Solution cost: 60
+----------------------------------------
+Algorithm: A*
+Solved: YES
+Time (ms): 241.495
+Generated states: 55717
+Expanded states: 24946
+Repeated states: 139877
+Visited states: 52882
+Max frontier size: 30003
+Approx memory (bytes): 6389688
+Move count: 15
+Solution cost: 15
+----------------------------------------
+Algorithm: Weighted A*
+Solved: YES
+Time (ms): 185.82
+Generated states: 48330
+Expanded states: 19418
+Repeated states: 104985
+Visited states: 43779
+Max frontier size: 27694
+Approx memory (bytes): 5488960
+Move count: 15
+Solution cost: 15
+----------------------------------------

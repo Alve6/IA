@@ -38,6 +38,8 @@ ScreenState state = MENU;
 Rectangle hintButton;
 Rectangle solveButton;
 Rectangle solveToFileButton;
+Rectangle compareButton;
+Rectangle compareToFileButton;
 std::vector<LevelButton> levelButtons;
 std::string chosenLevelName = "";
 const std::vector<std::string> hintModes = {"BFS", "DFS", "IDS", "Greedy v1", "Greedy v2", "A*", "Weighted A*"};
@@ -59,48 +61,33 @@ int autoStepIndex = 0;
 float autoStepTimer = 0.0f;
 const float autoStepDelay = 0.45f; 
 std::string selectedAlgorithm = "";
+SolverResult lastSolverResult;
+bool hasSolverResult = false;
+std::vector<SolverResult> comparisonResults;
+bool hasComparisonResults = false;
 
-static std::vector<Action> runSelectedAlgorithm(int selection, const GameState &gameState, const GameBoard &gameBoard, std::string &algorithmName) {
+static SolverResult runSelectedAlgorithm(int selection, const GameState &gameState, const GameBoard &gameBoard) {
     switch (selection) {
-        case 1:
-            algorithmName = "BFS";
-            return solveBFS(gameState, gameBoard);
-        case 2:
-            algorithmName = "DFS";
-            return solveDFS(gameState, gameBoard);
-        case 3:
-            algorithmName = "IDS";
-            return solveIDS(gameState, gameBoard);
-        case 4:
-            algorithmName = "Greedy v1";
-            return solveGreedy1(gameState, gameBoard);
-        case 5:
-            algorithmName = "Greedy v2";
-            return solveGreedy2(gameState, gameBoard);
-        case 6:
-            algorithmName = "A*";
-            return solveA(gameState, gameBoard);
-        case 7:
-            algorithmName = "Weighted A*";
-            return solveWeightedA(gameState, gameBoard);
-        default:
-            algorithmName = "";
-            return {};
+        case 1: return solveBFS(gameState, gameBoard);
+        case 2: return solveDFS(gameState, gameBoard);
+        case 3: return solveIDS(gameState, gameBoard);
+        case 4: return solveGreedy1(gameState, gameBoard);
+        case 5: return solveGreedy2(gameState, gameBoard);
+        case 6: return solveA(gameState, gameBoard);
+        case 7: return solveWeightedA(gameState, gameBoard);
+        default: return {};
     }
 }
-
-struct SolverExecutionResult {
-    std::vector<Action> solution;
-    double elapsedMs;
-};
-
-static SolverExecutionResult runSelectedAlgorithmTimed(int selection, const GameState &gameState, const GameBoard &gameBoard, std::string &algorithmName) {
-    auto start = std::chrono::high_resolution_clock::now();
-    std::vector<Action> solution = runSelectedAlgorithm(selection, gameState, gameBoard, algorithmName);
-    auto end = std::chrono::high_resolution_clock::now();
-
-    double elapsedMs = std::chrono::duration<double, std::milli>(end - start).count();
-    return {solution, elapsedMs};
+static std::vector<SolverResult> runAllAlgorithms(const GameState &gameState, const GameBoard &gameBoard) {
+    std::vector<SolverResult> results;
+    results.push_back(solveBFS(gameState, gameBoard));
+    results.push_back(solveDFS(gameState, gameBoard));
+    results.push_back(solveIDS(gameState, gameBoard));
+    results.push_back(solveGreedy1(gameState, gameBoard));
+    results.push_back(solveGreedy2(gameState, gameBoard));
+    results.push_back(solveA(gameState, gameBoard));
+    results.push_back(solveWeightedA(gameState, gameBoard));
+    return results;
 }
 static std::string buildOutputFileName(const std::string &levelName, const std::string &algorithmName) {
     std::filesystem::create_directories("./results");
@@ -120,10 +107,8 @@ static std::string buildOutputFileName(const std::string &levelName, const std::
 static bool saveSolutionToFile(
     const std::string &filePath,
     const std::string &levelName,
-    const std::string &algorithmName,
     const GameState &initialState,
-    const std::vector<Action> &solution,
-    double elapsedMs
+    const SolverResult &result
 ) {
     std::ofstream out(filePath);
     if (!out.is_open())
@@ -131,10 +116,17 @@ static bool saveSolutionToFile(
 
     out << "Ricochet Robots - Solver Result\n";
     out << "Level: " << levelName << "\n";
-    out << "Algorithm: " << algorithmName << "\n";
-    out << "Solved: " << (!solution.empty() ? "YES" : "NO") << "\n";
-    out << "Time (ms): " << elapsedMs << "\n";
-    out << "Move count: " << solution.size() << "\n\n";
+    out << "Algorithm: " << result.algorithmName << "\n";
+    out << "Solved: " << (result.solved ? "YES" : "NO") << "\n";
+    out << "Time (ms): " << result.elapsedMs << "\n";
+    out << "Generated states: " << result.generatedStates << "\n";
+    out << "Expanded states: " << result.expandedStates << "\n";
+    out << "Repeated states: " << result.repeatedStates << "\n";
+    out << "Visited states: " << result.visitedStates << "\n";
+    out << "Max frontier size: " << result.maxFrontierSize << "\n";
+    out << "Approx memory (bytes): " << result.approxMemoryBytes << "\n";
+    out << "Move count: " << result.actions.size() << "\n";
+    out << "Solution cost: " << result.solutionCost << "\n\n";
 
     out << "Initial State\n";
     out << "Blue: " << initialState.bluePos.x << " " << initialState.bluePos.y << "\n";
@@ -143,12 +135,42 @@ static bool saveSolutionToFile(
     out << "Orange: " << initialState.orangePos.x << " " << initialState.orangePos.y << "\n\n";
 
     out << "Solution\n";
-    if (solution.empty()) {
+    if (result.actions.empty()) {
         out << "No solution found.\n";
     } else {
-        for (size_t i = 0; i < solution.size(); i++) {
-            out << (i + 1) << ". " << actionToString(solution[i]) << "\n";
+        for (size_t i = 0; i < result.actions.size(); i++) {
+            out << (i + 1) << ". " << actionToString(result.actions[i]) << "\n";
         }
+    }
+
+    return true;
+}
+
+static bool saveComparisonToFile(
+    const std::string &filePath,
+    const std::string &levelName,
+    const std::vector<SolverResult> &results
+) {
+    std::ofstream out(filePath);
+    if (!out.is_open())
+        return false;
+
+    out << "Ricochet Robots - Algorithm Comparison\n";
+    out << "Level: " << levelName << "\n\n";
+
+    for (const SolverResult &result : results) {
+        out << "Algorithm: " << result.algorithmName << "\n";
+        out << "Solved: " << (result.solved ? "YES" : "NO") << "\n";
+        out << "Time (ms): " << result.elapsedMs << "\n";
+        out << "Generated states: " << result.generatedStates << "\n";
+        out << "Expanded states: " << result.expandedStates << "\n";
+        out << "Repeated states: " << result.repeatedStates << "\n";
+        out << "Visited states: " << result.visitedStates << "\n";
+        out << "Max frontier size: " << result.maxFrontierSize << "\n";
+        out << "Approx memory (bytes): " << result.approxMemoryBytes << "\n";
+        out << "Move count: " << result.actions.size() << "\n";
+        out << "Solution cost: " << result.solutionCost << "\n";
+        out << "----------------------------------------\n";
     }
 
     return true;
@@ -180,12 +202,14 @@ void initHintButtons() {
     solveButton = {(float)(gridX + cols * cellSize + 20), (float)(gridY), 150.0f, 42.0f};
     hintButton = {(float)(gridX + cols * cellSize + 20), (float)(gridY + 52), 150.0f, 42.0f};
     solveToFileButton = {(float)(gridX + cols * cellSize + 20), (float)(gridY + 104), 150.0f, 42.0f};
+    compareButton = {(float)(gridX + cols * cellSize + 20), (float)(gridY + 156), 150.0f, 42.0f};
+    compareToFileButton = {(float)(gridX + cols * cellSize + 20), (float)(gridY + 208), 150.0f, 42.0f};
 
     hintBoxes.clear();
     for (int i = 0; i < (int)hintModes.size(); i++) {
         hintBoxes.push_back({
             (float)(gridX + cols * cellSize + 20),
-            (float)(gridY + 160 + i * 50),
+            (float)(gridY + 270 + i * 50),
             160.0f,
             42.0f
         });
@@ -249,6 +273,9 @@ void gameIterate() {
         selectedAlgorithm = "";
         selectingAutoSolve = false;
         selectingSolveToFile = false;
+        hasSolverResult = false;
+        hasComparisonResults = false;
+        comparisonResults.clear();
     }
     // If there's a click and input is allowed (i.e. game is not won and autosolving is not running)
     if (!gameWon && !autoSolving && IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
@@ -268,6 +295,32 @@ void gameIterate() {
             showHintMenu = !showHintMenu;
             selectingAutoSolve = false;
             selectingSolveToFile = true;
+        } else if (CheckCollisionPointRec(mousePos, compareButton)) {
+            comparisonResults = runAllAlgorithms(gameState, gameBoard);
+            hasComparisonResults = true;
+            showHintMenu = false;
+            hintText = "Comparison finished";
+            hasHint = false;
+            autoSolving = false;
+            autoSolution.clear();
+            autoStepIndex = 0;
+            autoStepTimer = 0.0f;
+            hasSolverResult = false;
+        } else if (CheckCollisionPointRec(mousePos, compareToFileButton)) {
+            comparisonResults = runAllAlgorithms(gameState, gameBoard);
+            hasComparisonResults = true;
+            showHintMenu = false;
+
+            std::string filePath = buildOutputFileName(chosenLevelName, "comparison_all");
+            bool saved = saveComparisonToFile(filePath, chosenLevelName, comparisonResults);
+
+            hintText = saved ? ("Comparison saved to: " + filePath) : "Failed to save comparison file";
+            hasHint = false;
+            autoSolving = false;
+            autoSolution.clear();
+            autoStepIndex = 0;
+            autoStepTimer = 0.0f;
+            hasSolverResult = false;
         } else if (showHintMenu) {
             int selection = -1;
             for (int i = 0; i < (int)hintBoxes.size(); i++) {
@@ -280,18 +333,20 @@ void gameIterate() {
             if (selection == -1) {
                 showHintMenu = false;
             } else {
-                SolverExecutionResult execution = runSelectedAlgorithmTimed(selection, gameState, gameBoard, selectedAlgorithm);
-                std::vector<Action> solution = execution.solution;
+                SolverResult result = runSelectedAlgorithm(selection, gameState, gameBoard);
+                lastSolverResult = result;
+                hasSolverResult = true;
+
+                std::vector<Action> solution = result.actions;
+                selectedAlgorithm = result.algorithmName;
 
                 if (selectingSolveToFile) {
                     std::string filePath = buildOutputFileName(chosenLevelName, selectedAlgorithm);
                     bool saved = saveSolutionToFile(
                         filePath,
                         chosenLevelName,
-                        selectedAlgorithm,
                         gameState,
-                        solution,
-                        execution.elapsedMs
+                        result
                     );
 
                     hasHint = false;
@@ -542,6 +597,13 @@ void gameDraw() {
     DrawRectangleRec(solveToFileButton, LIGHTGRAY);
     DrawRectangleLinesEx(solveToFileButton, 2, DARKGRAY);
     DrawText("Solve to File", (int)solveToFileButton.x + 12, (int)solveToFileButton.y + 10, 20, BLACK);
+    DrawRectangleRec(compareButton, LIGHTGRAY);
+    DrawRectangleLinesEx(compareButton, 2, DARKGRAY);
+    DrawText("Compare All", (int)compareButton.x + 14, (int)compareButton.y + 10, 20, BLACK);
+
+    DrawRectangleRec(compareToFileButton, LIGHTGRAY);
+    DrawRectangleLinesEx(compareToFileButton, 2, DARKGRAY);
+    DrawText("Compare to File", (int)compareToFileButton.x + 4, (int)compareToFileButton.y + 10, 20, BLACK);
     if (showHintMenu) {
         for (int i = 0; i < (int)hintModes.size(); i++) {
             DrawRectangleRec(hintBoxes[i], LIGHTGRAY);
@@ -551,6 +613,39 @@ void gameDraw() {
     }
     if (!showHintMenu && !hintText.empty()) {
         DrawText(hintText.c_str(), gridX, gridY + rows * cellSize + 80, 20, DARKGRAY);
+    }
+
+    if (hasSolverResult) {
+        int infoX = gridX + cols * cellSize + 20;
+        int infoY = gridY + 430;
+
+        DrawText(("Alg: " + lastSolverResult.algorithmName).c_str(), infoX, infoY, 18, DARKBLUE);
+        DrawText(TextFormat("Solved: %s", lastSolverResult.solved ? "YES" : "NO"), infoX, infoY + 22, 18, BLACK);
+        DrawText(TextFormat("Time: %.3f ms", lastSolverResult.elapsedMs), infoX, infoY + 44, 18, BLACK);
+        DrawText(TextFormat("Generated: %d", lastSolverResult.generatedStates), infoX, infoY + 66, 18, BLACK);
+        DrawText(TextFormat("Expanded: %d", lastSolverResult.expandedStates), infoX, infoY + 88, 18, BLACK);
+        DrawText(TextFormat("Repeated: %d", lastSolverResult.repeatedStates), infoX, infoY + 110, 18, BLACK);
+        DrawText(TextFormat("Moves: %d", lastSolverResult.solutionCost), infoX, infoY + 132, 18, BLACK);
+    }
+    
+    if (hasComparisonResults) {
+        int x = 20;
+        int y = screenHeight - 180;
+
+        DrawText("Algorithm Comparison", x, y, 20, MAROON);
+        y += 28;
+
+        for (const SolverResult &r : comparisonResults) {
+            std::string line =
+                r.algorithmName +
+                " | solved=" + std::string(r.solved ? "yes" : "no") +
+                " | moves=" + std::to_string(r.solutionCost) +
+                " | expanded=" + std::to_string(r.expandedStates) +
+                " | time=" + std::to_string((int)r.elapsedMs) + " ms";
+
+            DrawText(line.c_str(), x, y, 18, BLACK);
+            y += 22;
+        }
     }
 
     EndDrawing();

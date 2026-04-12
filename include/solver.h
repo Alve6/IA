@@ -3,25 +3,38 @@
 #include "game.h"
 
 #include <vector>
+#include <string>
 
 struct Action {
     RobotType robot;
     Direction dir;
 };
 
-// Guarantees to give the shortest solution, but may take a long while to compute
-std::vector<Action> solveBFS(const GameState &initState, const GameBoard &board);
-// Gives solution quickly, but it will probably be extremely inefficient (e.g. 615 moves)
-std::vector<Action> solveDFS(const GameState &initState, const GameBoard &board);
-//
-std::vector<Action> solveIDS(const GameState &initState, const GameBoard &board);
+struct SolverResult {
+    std::vector<Action> actions;
+    bool solved = false;
 
-std::vector<Action> solveGreedy1(const GameState &initState, const GameBoard &board);
+    int generatedStates = 0;
+    int expandedStates = 0;
+    int repeatedStates = 0;
 
-std::vector<Action> solveGreedy2(const GameState &initState, const GameBoard &board);
+    int solutionCost = 0;
+    int solutionDepth = 0;
 
-std::vector<Action> solveA(const GameState &initState, const GameBoard &board);
+    size_t visitedStates = 0;
+    size_t maxFrontierSize = 0;
+    size_t approxMemoryBytes = 0;
 
-std::vector<Action> solveWeightedA(const GameState &initState, const GameBoard &board);
+    double elapsedMs = 0.0;
+    std::string algorithmName = "";
+};
 
 std::string actionToString(const Action &action);
+
+SolverResult solveBFS(const GameState &initState, const GameBoard &board);
+SolverResult solveDFS(const GameState &initState, const GameBoard &board);
+SolverResult solveIDS(const GameState &initState, const GameBoard &board);
+SolverResult solveGreedy1(const GameState &initState, const GameBoard &board);
+SolverResult solveGreedy2(const GameState &initState, const GameBoard &board);
+SolverResult solveA(const GameState &initState, const GameBoard &board);
+SolverResult solveWeightedA(const GameState &initState, const GameBoard &board);
