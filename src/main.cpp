@@ -51,7 +51,7 @@ int main() {
     const int gridX = (screenWidth - cols * cellSize) / 2;
     const int gridY = 90;
     
-
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(screenWidth, screenHeight, "Ricochet");
     SetTargetFPS(60);
 
