@@ -1,3 +1,35 @@
 {
-    "accuracy": 0.666
+    "accuracy": 0.7171,
+    "features_used": [
+        "Gender",
+        "Age",
+        "Scholarship",
+        "Hipertension",
+        "Diabetes",
+        "Alcoholism",
+        "SMS_received",
+        "waiting_days",
+        "Neighbourhood_CARATO\u00cdRA",
+        "Neighbourhood_CENTRO",
+        "Neighbourhood_ITARAR\u00c9",
+        "Neighbourhood_JARDIM CAMBURI",
+        "Neighbourhood_JARDIM DA PENHA",
+        "Neighbourhood_JESUS DE NAZARETH",
+        "Neighbourhood_MARIA ORTIZ",
+        "Neighbourhood_Other",
+        "Neighbourhood_RESIST\u00caNCIA",
+        "Neighbourhood_TABUAZEIRO"
+    ],
+    "top_neighbourhoods": [
+        "JARDIM CAMBURI",
+        "MARIA ORTIZ",
+        "RESIST\u00caNCIA",
+        "JARDIM DA PENHA",
+        "ITARAR\u00c9",
+        "CENTRO",
+        "TABUAZEIRO",
+        "JESUS DE NAZARETH",
+        "BONFIM",
+        "CARATO\u00cdRA"
+    ]
 }
