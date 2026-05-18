@@ -3,86 +3,82 @@ import pandas as pd
 import joblib
 
 
-#load model data
-model_data = joblib.load("models/no_show_model.joblib")
-
-model = model_data["model"]
-features = model_data["features"]
-top_neighbourhoods = model_data["top_neighbourhoods"]
-
 st.set_page_config(
     page_title="Medical Appointment No-Show Predictor",
     layout="centered"
 )
 
+model_data = joblib.load("models/no_show_models.joblib")
+
+models = model_data["models"]
+features = model_data["features"]
+results = model_data["results"]
+
 st.title("Medical Appointment No-Show Predictor")
 
 st.write(
-    "This app predicts whether a patient is likely to miss a medical appointment."
+    "This application predicts the risk of a patient missing a medical appointment."
 )
 
-#inputs
+st.sidebar.title("Model Settings")
+
+selected_model_name = st.sidebar.selectbox(
+    "Choose prediction algorithm",
+    list(models.keys())
+)
+
+model = models[selected_model_name]
+
+st.info(f"Selected model: {selected_model_name}")
+
 st.subheader("Patient Information")
 
-gender_text = st.selectbox(
-    "Gender",
-    ["Male", "Female"]
-)
+gender_text = st.selectbox("Gender", ["Male", "Female"])
 
-age = st.slider(
-    "Age",
-    min_value=0,
-    max_value=100,
-    value=35
-)
+age = st.slider("Age", 0, 100, 35)
 
-scholarship = st.selectbox(
+scholarship_text = st.selectbox(
     "Scholarship / Social Support",
     ["No", "Yes"]
 )
 
-hypertension = st.selectbox(
-    "Hypertension",
-    ["No", "Yes"]
-)
+hypertension_text = st.selectbox("Hypertension", ["No", "Yes"])
 
-diabetes = st.selectbox(
-    "Diabetes",
-    ["No", "Yes"]
-)
+diabetes_text = st.selectbox("Diabetes", ["No", "Yes"])
 
-alcoholism = st.selectbox(
-    "Alcoholism",
-    ["No", "Yes"]
-)
+alcoholism_text = st.selectbox("Alcoholism", ["No", "Yes"])
 
-sms_received = st.selectbox(
-    "SMS Received",
-    ["No", "Yes"]
-)
+sms_received_text = st.selectbox("SMS Received", ["No", "Yes"])
 
 waiting_days = st.slider(
     "Days between scheduling and appointment",
-    min_value=0,
-    max_value=100,
-    value=7
+    0,
+    100,
+    7
 )
 
-neighbourhood = st.selectbox(
-    "Neighbourhood",
-    sorted(top_neighbourhoods)
+previous_no_shows = st.slider(
+    "Previous missed appointments",
+    0,
+    10,
+    0
 )
 
-#convert inputs
+distance_km = st.slider(
+    "Distance to clinic in km",
+    0.0,
+    50.0,
+    5.0
+)
+
 gender = 0 if gender_text == "Male" else 1
-scholarship = 1 if scholarship == "Yes" else 0
-hypertension = 1 if hypertension == "Yes" else 0
-diabetes = 1 if diabetes == "Yes" else 0
-alcoholism = 1 if alcoholism == "Yes" else 0
-sms_received = 1 if sms_received == "Yes" else 0
+scholarship = 1 if scholarship_text == "Yes" else 0
+hypertension = 1 if hypertension_text == "Yes" else 0
+diabetes = 1 if diabetes_text == "Yes" else 0
+alcoholism = 1 if alcoholism_text == "Yes" else 0
+sms_received = 1 if sms_received_text == "Yes" else 0
 
-#base input
-input_dict = {
+input_data = pd.DataFrame([{
     "Gender": gender,
     "Age": age,
     "Scholarship": scholarship,
@@ -90,52 +86,48 @@ input_dict = {
     "Diabetes": diabetes,
     "Alcoholism": alcoholism,
     "SMS_received": sms_received,
-    "waiting_days": waiting_days
-}
+    "waiting_days": waiting_days,
+    "previous_no_shows": previous_no_shows,
+    "distance_km": distance_km
+}])
 
-#add neighbourhood columns
-for col in features:
-    if col.startswith("Neighbourhood_"):
-        input_dict[col] = 0
-
-
-selected_col = f"Neighbourhood_{neighbourhood}"
-
-if selected_col in input_dict:
-    input_dict[selected_col] = 1
-
-
-#create dataframe
-input_data = pd.DataFrame([input_dict])
-
-
-#ensure correct column order
 input_data = input_data.reindex(columns=features, fill_value=0)
 
-#prediction
 st.subheader("Prediction")
 
-if st.button("Predict"):
-
+if st.button("Predict No-Show Risk"):
     prediction = model.predict(input_data)[0]
 
-    probability = model.predict_proba(input_data)[0][1]
-
-    if prediction == 1:
-        st.error(
-            "High risk: The patient is likely to miss the appointment."
-        )
+    if hasattr(model, "predict_proba"):
+        probability = model.predict_proba(input_data)[0][1]
     else:
-        st.success(
-            "Low risk: The patient is likely to attend the appointment."
-        )
+        probability = prediction
+
+    if probability >= 0.70:
+        st.error("High risk: call the patient to confirm the appointment.")
+    elif probability >= 0.40:
+        st.warning("Medium risk: send an SMS reminder.")
+    else:
+        st.success("Low risk: no extra action needed.")
 
     st.write(
-        f"Probability of missing the appointment: "
-        f"**{probability * 100:.2f}%**"
+        f"Probability of missing the appointment: **{probability * 100:.2f}%**"
     )
 
-#show input data
-st.subheader("Input Data")
+st.subheader("Selected Model Performance")
 
-st.dataframe(input_data)
+results_df = pd.DataFrame(results)
+
+selected_result = results_df[
+    results_df["model"] == selected_model_name
+]
+
+st.dataframe(selected_result, use_container_width=True)
+
+st.subheader("Comparison Between Algorithms")
+
+st.dataframe(results_df, use_container_width=True)
+
+st.subheader("Input Data Used by the Model")
+
+st.dataframe(input_data, use_container_width=True)

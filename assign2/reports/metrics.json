@@ -1,5 +1,34 @@
 {
-    "accuracy": 0.7171,
+    "results": [
+        {
+            "model": "Logistic Regression",
+            "accuracy": 0.6228,
+            "precision": 0.4172,
+            "recall": 0.4784,
+            "f1_score": 0.4457
+        },
+        {
+            "model": "Decision Tree",
+            "accuracy": 0.6104,
+            "precision": 0.4122,
+            "recall": 0.5374,
+            "f1_score": 0.4665
+        },
+        {
+            "model": "Random Forest",
+            "accuracy": 0.6323,
+            "precision": 0.4294,
+            "recall": 0.4871,
+            "f1_score": 0.4564
+        },
+        {
+            "model": "Gradient Boosting",
+            "accuracy": 0.7174,
+            "precision": 0.7434,
+            "recall": 0.1657,
+            "f1_score": 0.271
+        }
+    ],
     "features_used": [
         "Gender",
         "Age",
@@ -9,27 +38,11 @@
         "Alcoholism",
         "SMS_received",
         "waiting_days",
-        "Neighbourhood_CARATO\u00cdRA",
-        "Neighbourhood_CENTRO",
-        "Neighbourhood_ITARAR\u00c9",
-        "Neighbourhood_JARDIM CAMBURI",
-        "Neighbourhood_JARDIM DA PENHA",
-        "Neighbourhood_JESUS DE NAZARETH",
-        "Neighbourhood_MARIA ORTIZ",
-        "Neighbourhood_Other",
-        "Neighbourhood_RESIST\u00caNCIA",
-        "Neighbourhood_TABUAZEIRO"
+        "previous_no_shows",
+        "distance_km"
     ],
-    "top_neighbourhoods": [
-        "JARDIM CAMBURI",
-        "MARIA ORTIZ",
-        "RESIST\u00caNCIA",
-        "JARDIM DA PENHA",
-        "ITARAR\u00c9",
-        "CENTRO",
-        "TABUAZEIRO",
-        "JESUS DE NAZARETH",
-        "BONFIM",
-        "CARATO\u00cdRA"
+    "datasets_used": [
+        "KaggleV2-May-2016.csv",
+        "synthetic_medical_appointments.csv"
     ]
 }
