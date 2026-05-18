@@ -15,8 +15,9 @@ from sklearn.metrics import (
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-
-
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 os.makedirs("models", exist_ok=True)
 os.makedirs("reports", exist_ok=True)
 
@@ -115,7 +116,16 @@ models = {
         learning_rate=0.05,
         max_depth=4,
         random_state=42
-    )
+    ),
+
+    "K-Neighbors ": Pipeline([
+        ("scaler", StandardScaler()),
+        ("model", KNeighborsClassifier(
+        n_neighbors=34,
+        weights="uniform",
+        metric="manhattan"
+        ))
+    ]) 
 }
 
 trained_models = {}
